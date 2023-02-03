@@ -28,10 +28,10 @@ def solve_to(f, x1, t1, t2, deltat_max):
     # initialize the solution
     x = [x1]
     t = [t1]
-    error_values = [error(x1, t1)]
-    print( x, t, error_values)
+    error_values = [error(x1,t1)]
+
     # loop until we reach the end point
-    while t[-1] < t2:
+    while True:
         # take a step
         x1, t1 = euler_step(f, x[-1], t[-1], deltat_max)
         # append the new values to the solution
@@ -39,19 +39,23 @@ def solve_to(f, x1, t1, t2, deltat_max):
         t.append(t1)
         # append errors to error list
         error_values.append(error(x1, t1))
-    return x, t, error_values
-
-
+        if t[-1] > t2:
+            break
+    return x, t, error_values[-1]
 
 # produce a plot with double logarithmic scale showing how the error depends on the size od the timestep delta t
 # define the step size
-deltas = np.arange(0.01, 1, 0.01)
+deltas = np.arange(0.001, 1, 0.001)
+error_list = []
 for delta_t in deltas:
     # solve the ODE up to t = 1
     x, t, error_vals = solve_to(f, x0, t0, 1, delta_t)
     # plot the error
-    print(len(x), len(t), len(error_vals))
-    plt.plot(deltas, error_vals, 'o')
-    plt.xlabel('delta t')
-    plt.ylabel('error')
-    plt.show()
+    error_list.append(error_vals)
+    # print(len(x), len(t), error_vals)
+
+plt.loglog(deltas, error_list, 'o')
+plt.title('Error at x(1) with variation in Delta t (Double Log Scale)')
+plt.xlabel('Delta t')
+plt.ylabel('Error')
+plt.show()
