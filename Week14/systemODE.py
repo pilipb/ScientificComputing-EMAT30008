@@ -1,61 +1,66 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+'''
 
-### DEFINING THE SYSTEM OF ODES ###
+x''(t) - x(t) = 0
 
-# define the function
-xdot = lambda x, y: y
-ydot = lambda x, y: -x
-f = lambda x, y: np.array([xdot(x, y), ydot(x, y)])
+# theta is x, omega is y
 
-# define the initial conditions
-x0 = 1
-y0 = 0
+x'(t) = y(t)
+y'(t) = -x(t)
+
+'''
+### USING ODEINT ###
+
+def pend(x0, t):
+    x, y = x0
+    dxdt = [y, -x]
+    return dxdt
+
+x0 = [np.pi - 0.1, 0.0]
+
+t = np.linspace(0, 10, 101)
+
+from scipy.integrate import odeint
+sol = odeint(pend, x0, t)
+
+plt.plot(t, sol[:, 0], 'b', label='x(t)')
+plt.plot(t, sol[:, 1], 'g', label='y(t)')
+plt.legend(loc='best')
+plt.xlabel('t')
+plt.grid()
+# plt.show()
+
+### USING EULER METHOD ###
+
+from ODEmethods import euler_step
+from systemODE import solve_to
+
+### SOLVING THE ODE ###
+
+# solve for range of step sizes
+deltas = np.arange(0.001, 1, 0.001)
+euler_errors = []
+RK4_errors = []
+
+x0 = [np.pi - 0.1, 0.0]
 t0 = 0
 
-# define the exact solution and the error function
-x_exact = lambda t: np.cos(t) + np.sin(t)
-def error(x, t):
-    return np.abs(f(x) - x_exact(t))
+deltas = np.arange(0.001, 1, 0.001)
 
-### SETTING UP THE METHODS ###
+# use the timer
+for delta_t in deltas:
+    # solve the ODE up to t = 1
+    x, t = solve_to(pend, x0, t0, 1, delta_t, 'euler')
+    # save the error
+    euler_errors.append(error(x[-1], t[-1]))
 
-# define euler step
-def euler_step(f, x0, y0, t0, delta_t):
-    x1, y1 = x0 + delta_t * f(x0,y0)
-    t1 = t0 + delta_t
-    return x1,y1, t1
-
-# define the RK4 step
-def RK4_step(f, x0,y0, t0, delta_t):
-    k1 = delta_t * f(x0,y0)
-    k2 = delta_t * f(x0 + k1/2)
-    k3 = delta_t * f(x0 + k2/2)
-    k4 = delta_t * f(x0 + k3)
-    x1 = x0 + (k1 + 2*k2 + 2*k3 + k4)/6
-
-    t1 = t0 + delta_t
-    return x1, t1
-# define solve_to
-def solve_to(f, x1, t1, t2, deltat_max, method):
-    # initialize the solution
-    x = [x1]
-    t = [t1]
-
-    # loop until we reach the end point
-    while True:
-        # take a step
-        if method == 'euler':
-            x1, t1 = euler_step(f, x[-1], t[-1], deltat_max)
-        elif method == 'RK4':
-            x1, t1 = RK4_step(f, x[-1], t[-1], deltat_max)
-        else:
-            raise ValueError('method must be euler or RK4')
-        # append the new values to the solution
-        x.append(x1)
-        t.append(t1)
-        if t[-1] > t2:
-            break
-    return x, t
-
+### PLOTTING THE RESULTS ###
+plt.loglog(deltas, euler_errors, 'o', label='Euler')
+# plt.loglog(deltas, RK4_errors, 'o', label='RK4')
+plt.title('Error vs Delta t for Euler and RK4 methods')
+plt.xlabel('Delta t')
+plt.ylabel('Error')
+plt.legend()
+plt.show()
