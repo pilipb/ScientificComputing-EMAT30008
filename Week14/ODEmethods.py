@@ -1,6 +1,17 @@
 # imports
 import numpy as np
 import matplotlib.pyplot as plt
+import time
+
+### INCLUDING TIMER ###
+
+# Calculate the time taken by each method
+def startTimer():
+    timer = time.time()
+    return timer
+def endTimer(timer):
+    elapsed = time.time() - timer
+    return elapsed
 
 ### SETTING UP THE METHODS ###
 
@@ -63,15 +74,22 @@ deltas = np.arange(0.001, 1, 0.001)
 euler_errors = []
 RK4_errors = []
 
+# use the timer
+timer = startTimer()
 for delta_t in deltas:
     # solve the ODE up to t = 1
     x, t = solve_to(f, x0, t0, 1, delta_t, 'euler')
     # save the error
     euler_errors.append(error(x[-1], t[-1]))
+eulerTimer = endTimer(timer)
 
+timer = startTimer()
+for delta_t in deltas:
+    # solve the ODE up to t = 1
     x, t = solve_to(f, x0, t0, 1, delta_t, 'RK4')
     # save the error
     RK4_errors.append(error(x[-1], t[-1]))
+RK4Timer = endTimer(timer)
 
 ### PLOTTING THE RESULTS ###
 plt.loglog(deltas, euler_errors, 'o', label='Euler')
@@ -83,3 +101,24 @@ plt.legend()
 plt.show()
 
 ### ANALYSIS ###
+
+# Find step sizes that give the same error for Rk4 and Euler
+same_error = min(euler_errors)
+print('\nTo find the step size at which the same occurs, we will use the step size that achieves the minimum error on the euler method\n')
+print('The minimum Euler error is %f and occurs at time step %f\n' % (same_error, min(deltas)))
+rk4_error = 0
+idx = 0
+while rk4_error < same_error:
+    rk4_error = RK4_errors[idx]
+    idx += 1
+
+print('The same error can be achieved with a step size of %f using the RK4 method\n' % (deltas[idx]) )
+
+
+# Compare the time take for both methods
+print('The time taken to find all solutions for: \nEuler: ', eulerTimer, '\nRK4: ', RK4Timer)
+print('\nRK4 is %.2f times slower.' % (RK4Timer/eulerTimer) ) 
+    
+
+
+
