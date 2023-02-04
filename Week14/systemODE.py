@@ -44,9 +44,7 @@ def fun(x0):
 
 # define error
 x_exact = lambda t: np.sin(t) + np.cos(t)
-def error(x, t):
-    # return x
-    return np.abs(x - x_exact(t))
+
 
 # define euler step
 def euler_step(f, X, t0, delta_t):
@@ -82,7 +80,7 @@ def solve_to(f, x1, t1, t2, deltat_max, method):
         else:
             raise ValueError('method must be euler or RK4')
         # append the new values to the solution
-        x.append(x1)
+        x.append([x1[0],x1[1]])
         t.append(t1)
         if t[-1] > t2:
             break
@@ -100,26 +98,35 @@ x0 = [np.pi - 0.1, 0.0]
 t0 = 0
 
 deltas = np.arange(0.001, 1, 0.001)
-sol = []
-solT = []
+
 
 # use the timer
-for delta_t in deltas:
+# for delta_t in deltas:
     # solve the ODE up to t = 1
-    x, t = solve_to(fun, x0, t0, 1, delta_t, 'euler')
+X_euler, t = solve_to(fun, x0, t0, 10, 0.01, 'euler')
+X_rk4, t = solve_to(fun, x0, t0, 10, 0.01, 'euler')
     # sol.append(x)
     # solT.append(t)
     # save the error
-    euler_errors.append(error(x[-1], t[-1]))
+X_euler = np.array(X_euler)
+X_rk4 = np.array(X_rk4)
 
+
+# errors = []
+# for delta_t in deltas:
+#     # solve the ODE up to t = 1
+#     X, t = solve_to(fun, x0, t0, 10, 0.01, 'euler')
+#     # save the error
+    
 
 plt.figure()
 ### PLOTTING THE RESULTS ###
-
-plt.loglog(deltas, euler_errors, 'o', label='x')
+plt.plot(t,X_euler,'-',label='Solutions - Euler')
+plt.plot(t,X_rk4,'-',label='Solutions - RK4')
 # plt.loglog(deltas, RK4_errors, 'o', label='RK4')
 # plt.title('Error vs Delta t for Euler and RK4 methods')
 # plt.xlabel('Delta t')
 # plt.ylabel('Error')
 plt.legend()
 plt.show()
+
