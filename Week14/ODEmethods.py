@@ -92,13 +92,14 @@ for delta_t in deltas:
 RK4Timer = endTimer(timer)
 
 ### PLOTTING THE RESULTS ###
-plt.loglog(deltas, euler_errors, 'o', label='Euler')
-plt.loglog(deltas, RK4_errors, 'o', label='RK4')
+plt.loglog(deltas, euler_errors, '-', label='Euler')
+plt.loglog(deltas, RK4_errors, '-', label='RK4')
 plt.title('Error vs Delta t for Euler and RK4 methods')
 plt.xlabel('Delta t')
 plt.ylabel('Error')
 plt.legend()
 plt.show()
+plt.close()
 
 ### ANALYSIS ###
 
