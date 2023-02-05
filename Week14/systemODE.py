@@ -109,6 +109,7 @@ X_lax, t = solve_to(fun, x0, t0, t_end, step_size, 'Lax-Wendroff')
  
 
 ### PLOTTING THE RESULTS ###
+# Euler
 plt.figure('X vs t - Euler')
 plt.plot(t,X_euler,'-',label='Solutions - Euler')
 # only plot for euler as it is the same for RK4
@@ -121,6 +122,7 @@ plt.ylabel('x(t)')
 plt.legend()
 plt.show()
 
+# RK4
 plt.figure('X vs t - RK4')
 plt.plot(t,X_rk4,'-',label='Solutions - RK4')
 
@@ -132,6 +134,7 @@ plt.ylabel('x(t)')
 plt.legend()
 plt.show()
 
+# Lax-Wendroff
 plt.figure('X vs t - Lax-Wendroff')
 plt.plot(t,X_lax,'-',label='Solutions - Lax-Wendroff')
 
@@ -142,6 +145,36 @@ plt.xlabel('t')
 plt.ylabel('x(t)')
 plt.legend()
 plt.show()
+
+# Plot Euler error
+plt.figure('Error - Euler')
+plt.plot(t,abs(X_euler[:,0]-x_exact(t)),'-',label='Error - Euler')
+plt.xlabel('t')
+plt.ylabel('Error')
+plt.legend()
+plt.show()
+
+# Plot RK4 error
+plt.figure('Error - RK4')
+plt.plot(t,abs(X_rk4[:,0]-x_exact(t)),'-',label='Error - RK4')
+plt.xlabel('t')
+plt.ylabel('Error')
+plt.legend()
+plt.show()
+
+# Plot Lax-Wendroff error
+plt.figure('Error - Lax-Wendroff')
+plt.plot(t,abs(X_lax[:,0]-x_exact(t)),'-',label='Error - Lax-Wendroff')
+plt.xlabel('t')
+plt.ylabel('Error')
+plt.legend()
+plt.show()
+
+''' 
+The Lax-Wendroff method is the most accurate, as it is a second order method. But it still
+diverges from the exact solution. This is because the step size is too large.
+
+'''
 
 # now plot x(t) vs x'(t)
 plt.figure('X vs X\' - Euler')
