@@ -94,39 +94,34 @@ deltas = np.arange(0.001, 1, 0.001)
 euler_errors = []
 RK4_errors = []
 
-x0 = [np.pi - 0.1, 0.0]
+x0 = [0.3, 0.1]
 t0 = 0
 
 deltas = np.arange(0.001, 1, 0.001)
 
+# solve for a large range of t (100)
+X_euler, t = solve_to(fun, x0, t0, 100, 0.01, 'euler')
+X_rk4, t = solve_to(fun, x0, t0, 100, 0.01, 'euler')
 
-# use the timer
-# for delta_t in deltas:
-    # solve the ODE up to t = 1
-X_euler, t = solve_to(fun, x0, t0, 10, 0.01, 'euler')
-X_rk4, t = solve_to(fun, x0, t0, 10, 0.01, 'euler')
-    # sol.append(x)
-    # solT.append(t)
-    # save the error
 X_euler = np.array(X_euler)
 X_rk4 = np.array(X_rk4)
-
-
-# errors = []
-# for delta_t in deltas:
-#     # solve the ODE up to t = 1
-#     X, t = solve_to(fun, x0, t0, 10, 0.01, 'euler')
-#     # save the error
     
 
-plt.figure()
+
 ### PLOTTING THE RESULTS ###
+plt.figure('X vs t')
 plt.plot(t,X_euler,'-',label='Solutions - Euler')
-plt.plot(t,X_rk4,'-',label='Solutions - RK4')
-# plt.loglog(deltas, RK4_errors, 'o', label='RK4')
-# plt.title('Error vs Delta t for Euler and RK4 methods')
-# plt.xlabel('Delta t')
-# plt.ylabel('Error')
+# only plot for euler as it is the same for RK4
+plt.xlabel('t')
+plt.ylabel('x(t)')
+plt.legend()
+plt.show()
+
+# now plot x(t) vs x'(t)
+plt.figure('X vs X\'')
+plt.plot(X_euler[:,0],X_euler[:,1],'-',label='x(t) vs x\'(t) - Euler')
+plt.xlabel('x(t)')
+plt.ylabel('x\'(t)')
 plt.legend()
 plt.show()
 
