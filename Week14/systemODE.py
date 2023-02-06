@@ -50,7 +50,7 @@ def RK4_step(f, X, t0, delta_t):
     return X1, t1
 
 '''
-Both the Euler and RK4 methods are first order methods, so they are not stable for the system of ODEs.
+The Euler method is a first order method, so it is not stable for the system of ODEs.
 This is seen in the plots below, where the solutions diverge from the exact solution.
 
 The Lax-Wendroff method is a second order method, so it is stable for the system of ODEs.
@@ -96,7 +96,7 @@ def solve_to(f, x1, t1, t2, deltat_max, method):
 
 ### SOLVING THE ODE ###
 
-step_size = 0.1 # with a larger step size, the solutions diverge more from the exact solution
+step_size = 0.01 # with a larger step size, the solutions diverge more from the exact solution
 x0 = [np.pi/2, 0] # initial conditions
 t0 = 0
 t_end = 100 # end time
