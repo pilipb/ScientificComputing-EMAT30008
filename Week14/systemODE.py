@@ -43,7 +43,7 @@ def RK4_step(f, X, t0, delta_t):
     k2 = delta_t * f([x0 + delta_t/2, y0 + delta_t/2], t0 + delta_t/2)
     k3 = delta_t * f([x0 + delta_t/2, y0 + delta_t/2] , t0 + delta_t/2)
     k4 = delta_t * f([x0 + delta_t, y0 + delta_t] , t0 + delta_t)
-    x1,y1 = [x0,y0] + (k1) + 2*(k2) + 2*(k3) + (k4)
+    x1,y1 = [x0,y0] + (k1)/6 + 2*(k2)/6 + 2*(k3)/6 + (k4)/6
     t1 = t0 + delta_t
     X1 = [x1,y1]
     return X1, t1
@@ -52,7 +52,6 @@ def RK4_step(f, X, t0, delta_t):
 The Euler method is a first order method, so it is not stable for the system of ODEs.
 This is seen in the plots below, where the solutions diverge from the exact solution.
 '''
-
 
 # define solve_to
 def solve_to(f, x1, t1, t2, deltat_max, method):
