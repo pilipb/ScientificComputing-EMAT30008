@@ -11,7 +11,8 @@ the period of the solution is 2 * pi / omega
 ### imports
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.integrate import odeint
+# from Week14.systemODE import solve_to
+from scipy.optimize import root
 
 ### define the ODE
 
@@ -36,7 +37,8 @@ y0 = [0, 0]
 t = np.linspace(0, 10 * np.pi / omega, 1000)
 
 # solve the ODE
-y = odeint(f, y0, t, args=(m, c, k, gamma, omega))
+y = scipy.integrate.odeint(f, y0, t[0], t[-1], 0.01, 'RK4', m, c, k, gamma, omega)
+print(y)
 
 # plot the solution
 plt.plot(t, y[:, 0], 'b', label='numerical')
@@ -46,7 +48,22 @@ plt.ylabel('x(t)')
 plt.legend(loc='best')
 plt.show()
 
-### Simulate the predator-prey equations below
+# to find limit cycle, we must solve the periodic boundary value problem
+# we can do this by shooting method
+
+# define the initial conditions
+u_0 = y0
+
+# define the root finding function
+fun1 = lambda Y, t: u_0 - Y(u_0, t) 
+
+shooting_solution = root(fun1, u_0, args=(t,))
+
+
+#%%
+
+
+### SIMULATING A POPULATION OF PREY AND PREDATORS ###
 
 a = 1
 d = 0.1
