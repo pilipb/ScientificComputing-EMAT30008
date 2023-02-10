@@ -14,10 +14,10 @@ array - t  - time for these solutions
 
 '''
 
-def shooting(f, y0, t0,tol=1e-3):
-    # initialize the solution
-    t = [t0]
+import matplotlib.pyplot as plt
 
+def shooting(f, y0, t0,tol=1e-3):
+    
     # set the initial iteration
     iteration = 0
 
@@ -29,14 +29,20 @@ def shooting(f, y0, t0,tol=1e-3):
         # solve the ODE with the guess
         Y, t = solve_to(f, [1,y0], t0, 100, tol,  'RK4' )
 
-        # calculate the error
-        error = abs(Y[-1][0] - Y[0][0])
+        # plot this solution
+        plt.plot(t, Y)
 
-        # update the guess
-        y0 = [1, y0 - error]
+        # shoot until the gradient is zero at arbitrary time
+        t_arb = 50
 
-        # update the iteration
-        iteration += 1
+        # find the 
 
     return Y, t
 
+# define the ODE
+def ode(Y, t, args = ()):
+    x, y = Y
+    return np.array([y, -x])
+
+# run 
+shooting(ode, 0.1, 0)
