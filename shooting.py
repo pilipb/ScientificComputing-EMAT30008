@@ -46,8 +46,8 @@ def shooting(f, y0, method):
         return b*y*(1- (y/x))
 
     x,y = Y[:,0], Y[:,1]
-    dy = dydt(x,y,b)
-    print('Initial guess: ', guess, 'dy/dx at t = 100 (arbitrary): ', dy[-1])
+    dy = dydt(x,y,b=0.1)
+    # print('Initial guess: ', guess, 'dy/dx at t = 100 (arbitrary): ', dy[-1])
     plt.plot(t, y, label='guess = %.2f' %guess)
 
     # the goal is to make the gradient dy/dx = 0 at t = 100
@@ -59,7 +59,7 @@ def shooting(f, y0, method):
         Y = np.array(Y)
         x , y = Y[:,0], Y[:,1]
         dy = dydt(x,y,b)
-        print('New guess: ', guess, 'dy/dt at t = 100: ', dy[-1])
+        # print('New guess: ', guess, 'dy/dt at t = 100: ', dy[-1])
         plt.plot(t, y, label='guess = %.2f' %(guess))
         
     return Y, t, guess
@@ -115,7 +115,7 @@ if __name__ == '__main__':
         return np.array([x*(1-x) - (a*x*y)/(d+x) , b*y*(1- (y/x))])
 
     # solve the ode using the shooting method
-    Y,t,guess = shooting(ode, 0.1,'RK4')
+    Y,t,guess = shooting(ode, 0.1,'RK4', args = (a, b, d))
     plt.show()
 
     # plot the period
