@@ -45,5 +45,5 @@ def solve_to(f, y0, t0, t1, delta_t, method):
         # print(t)
 
 
-    return Y, t
+    return np.array(Y), np.array(t)
 

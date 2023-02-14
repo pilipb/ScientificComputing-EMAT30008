@@ -11,7 +11,7 @@ The function also plots the solution at each guess.
 
 Parameters:
 f - function: the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
-y0 - array: the initial value of the solution
+y0 - array: the initial value of the solution 
 method - string: the method to be used to solve the ODE (Euler, RK4, Heun)
 
 Returns:
@@ -22,51 +22,46 @@ guess - float: the starting condition that gives the limit cycle
 '''
 
 def shooting(f, y0, method):
+
     # initialize the solution and constants
-    Y = [y0]
+    Y = [y0]  
     t = [0]
 
     t0 = t[0]
-    t1 = 100
-
-    guess = 0.01
+    t1 = 100 # arbitrary end time for search space
 
     delta_t = 0.01
     step = 0.01
 
-    # find method
-    methods = {'Euler': euler_step, 'RK4': rk4_step, 'Heun': heun_step}
-
-    # check if method is valid
-    if method not in methods:
-        raise ValueError('Invalid method, please enter a valid method: Euler, RK4, Lax-Wendroff or define your own')
-
-
     # solve ode at y0 guess
-    Y , t = solve_to(f, [1,guess], t0, t1, delta_t, method)
-    Y = np.array(Y)
+    Y , t = solve_to(f, y0, t0, t1, delta_t, method)
 
-    # find dy/dt 
-    def dydt(x,y,b):
-        return b*y*(1- (y/x))
+    # find dx/dt 
+    def dxdt(f, Y, t):
+        return f(Y, t)[0]
 
-    x,y = Y[:,0], Y[:,1]
-    dy = dydt(x,y,b=0.1)
-    # print('Initial guess: ', guess, 'dy/dx at t = 100 (arbitrary): ', dy[-1])
-    plt.plot(t, y, label='guess = %.2f' %guess)
+    dx = dxdt(f, Y[-1], t1)
+    
+    plt.plot(t, Y, label='guess = %.2f, dx/dt at t = %.2f: %.2f' %(y0[0],t1, dx))
 
-    # the goal is to make the gradient dy/dx = 0 at t = 100
+    # the goal is to make the gradient dx/dt = 0 at t = 100
     # we can do this by shooting the solution until the gradient is zero
+    print('Calculating limit cycle...')
+    print('\n')
+    while np.round(dx,2) != 0:
+        print('-', end='')
+        # if the gradient is negative, increase the guess, if positive, decrease the guess
+        guess = y0[0]
+        guess += step * (0 - dx) 
+        y0[0] = guess
+        # solve the ODE at the new guess
+        Y, t = solve_to(f, y0, 0, t1, delta_t, 'RK4')
+        dx = dxdt(f, Y[-1], t1)
 
-    while np.round(dy[-1],2) != 0:
-        guess += step * (0 - dy[-1]) 
-        Y, t = solve_to(f, [1,guess], 0, 100, 0.01, 'RK4')
-        Y = np.array(Y)
-        x , y = Y[:,0], Y[:,1]
-        dy = dydt(x,y,b=0.1)
-        # print('New guess: ', guess, 'dy/dt at t = 100: ', dy[-1])
-        plt.plot(t, y, label='guess = %.2f' %(guess))
+        plt.plot(t, Y, label='guess = %.2f, dx/dt at t = %.2f: %.2f' %(t1, y0[0], dx))
         
+    print('Limit cycle found at guess = %.2f' %guess)
+    print('dx/dt at t = %.2f: %.2f' %(t1, dx))
     return Y, t, guess
 
 '''
@@ -84,45 +79,51 @@ t - array: the time solution at the final guess (limit cycle) from the shooting 
 '''
 
 def period(Y, t):
-    # find the index of the max value
-    max_index = np.argmax(Y[:,1])
-    # reduce the Y and t arrays to only the values after the max value
-    Y = Y[max_index:]
-    t = t[max_index:]
-    # find the index of the min value
-    min_index = np.argmin(Y[:,1])
-    # reduce the Y and t arrays to only the values after the min value
-    Ys = Y[min_index:]
-    # find the index of the next max value
-    max2_index = np.argmax(Ys[:,1]) + min_index 
-    # reduce the Y and t arrays to only the values before the second max value
-    Y = Y[:max2_index]
-    t = t[:max2_index]
+    # shorten the search space
+    Y, t = Y[1000:], t[1000:]
+    # find the max value of the solution
+    max_value = np.max(Y[:,0])
+    # find the min value of the solution
+    min_value = np.min(Y[:,0])
+    # find the average value of the solution
+    avg_value = (max_value + min_value)/2
+    # find the last index where the solution is greater than the average value
+    max_index = np.argmax(Y[:,0] - avg_value)
+    # reduce the Y and t arrays to only the values before the max value
+    Y = Y[:max_index-50] 
+    t = t[:max_index-50]
+    # find the last index where the solution is less than the average value
+    min_index = np.argmax(avg_value - Y[:,0])
     # find the period
-    T = (t[-1] - t[0]) 
+    period_idx = max_index - min_index
+    T = (t[period_idx] - t[0])*2
+    # return one period of the solutions
+    Y = Y[min_index-period_idx:max_index]
+    t = t[min_index-period_idx:max_index]
+
     return T, Y, t
 
 
-
-
 #### TEST ####
+
 ''' 
 example code to test the shooting method and period function
 the ode is the Lotka-Volterra equation
 '''
 
 if __name__ == '__main__':
-    # define the ode
-    a = 1
-    d = 0.1
-    b = 0.1
+    
+    # define a simple 3rd order ode
+    a = -1
+    b = 1
 
-    def ode(Y, t, args = (a, b, d)):
-        x, y = Y
-        return np.array([x*(1-x) - (a*x*y)/(d+x) , b*y*(1- (y/x))])
+    def ode3(Y, t, args = (a , b)):
+        a, b = args
+        x, y, z = Y
+        return np.array([b*x - y + a*x*(x**2 + y**2), x + b*y + a*y*(x**2 + y**2) , -z]) 
 
     # solve the ode using the shooting method
-    Y,t,guess = shooting(ode, 0.1,'RK4', args = (a, b, d))
+    Y,t,guess = shooting(ode3, [0.16,0.1,0.1],'RK4')
     plt.show()
 
     # plot the period
@@ -131,7 +132,7 @@ if __name__ == '__main__':
     plt.xlabel('t')
     plt.ylabel('x(t) and y(t)')
     plt.legend('x(t)', 'y(t)')
-    plt.title('Period = %.2f, starting condition [1, %f]' %( T, guess))
+    plt.title('Period = %.2f, starting condition = [%.4f, 0.1, 0.1] '%( T, guess ))
     plt.show()
         
 
