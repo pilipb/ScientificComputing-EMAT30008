@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 '''
 shooting method will solve the ODE using root finding method to find the limit cycle
 
-param: function - f - the function to be solved
+param: function - f - the function to be solved in first order form
 param: float - y0 - the initial guess for y coordinate
 param: float - t0 - the initial time
 
@@ -30,7 +30,7 @@ def shooting(f, y0, method):
     step = 0.01
 
     # find method
-    methods = {'Euler': euler_step, 'RK4': rk4_step, 'Lax-Wendroff': lw_step}
+    methods = {'Euler': euler_step, 'RK4': rk4_step, 'Heun': heun_step}
 
     # check if method is valid
     if method not in methods:
@@ -55,10 +55,10 @@ def shooting(f, y0, method):
 
     while np.round(dy[-1],2) != 0:
         guess += step * (0 - dy[-1]) 
-        Y, t = solve_to(ode, [1,guess], 0, 100, 0.01, 'RK4')
+        Y, t = solve_to(f, [1,guess], 0, 100, 0.01, 'RK4')
         Y = np.array(Y)
         x , y = Y[:,0], Y[:,1]
-        dy = dydt(x,y,b)
+        dy = dydt(x,y,b=0.1)
         # print('New guess: ', guess, 'dy/dt at t = 100: ', dy[-1])
         plt.plot(t, y, label='guess = %.2f' %(guess))
         

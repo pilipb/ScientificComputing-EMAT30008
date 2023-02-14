@@ -23,11 +23,11 @@ def solve_to(f, y0, t0, t1, delta_t, method):
     t = [t0]
 
     # find method
-    methods = {'Euler': euler_step, 'RK4': rk4_step, 'Lax-Wendroff': lw_step}
+    methods = {'Euler': euler_step, 'RK4': rk4_step, 'Heun': heun_step}
 
     # check if method is valid
     if method not in methods:
-        raise ValueError('Invalid method, please enter a valid method: Euler, RK4, Lax-Wendroff or define your own')
+        raise ValueError('Invalid method, please enter a valid method: Euler, RK4, Heun or define your own')
 
     # set method
     method = methods[method]
