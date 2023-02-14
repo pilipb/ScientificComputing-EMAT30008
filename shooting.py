@@ -4,15 +4,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 '''
-shooting method will solve the ODE using root finding method to find the limit cycle
+The shooting method will solve the ODE using root finding method to find the limit cycle
+of the ODE. The method calls the solve_to method to solve the ODE at each guess.
 
-param: function - f - the function to be solved in first order form
-param: float - y0 - the initial guess for y coordinate
-param: float - t0 - the initial time
+The function also plots the solution at each guess.
 
-returns:
-array - Y - the solution values and the
-array - t  - time for these solutions
+Parameters:
+f - function: the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
+y0 - array: the initial value of the solution
+method - string: the method to be used to solve the ODE (Euler, RK4, Heun)
+
+Returns:
+Y - array: the solution at the final guess (limit cycle)
+t - array: the time solution at the final guess (limit cycle)
+guess - float: the starting condition that gives the limit cycle
 
 '''
 
@@ -65,14 +70,16 @@ def shooting(f, y0, method):
     return Y, t, guess
 
 '''
-the period function will find the period of the limit cycle
-param: array - Y - the solution values from the shooting method
-param: array - t - the time values from the shooting method
+The period function will find the period of the limit cycle and plot the solution
 
-returns:
-float - T - the period of the limit cycle
-array - Y - the solution values for a single limit cycle
-array - t - the time values for a single limit cycle
+Parameters:
+Y - array: the solution at the final guess (limit cycle) from the shooting method
+t - array: the time solution at the final guess (limit cycle) from the shooting method
+
+Returns:
+T - float: the period of the limit cycle
+Y - array: the solution at the final guess (limit cycle) from the shooting method for one period oscillation
+t - array: the time solution at the final guess (limit cycle) from the shooting method for one period oscillation
 
 '''
 

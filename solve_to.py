@@ -1,16 +1,18 @@
 '''
-solve_to method will solve ODE from t0 to t1 with a given step size
+solve_to method will solve ODE from time t0 to t1 with a given step size
+using a given method from the solvers.py file
 
-param: function - f - the function to be solved
-param: float - y0 - the initial condition
-param: float - t0 - the initial time
-param: float - t1 - the final time
-param: float - delta_t - the step size
-param: str - method - the method to be used
+Parameters:
+f - function: the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
+y0 - array: the initial value of the solution
+t0 - float: the initial value of time
+t1 - float: the end time
+delta_t - float: the step size
+method - string: the method to be used to solve the ODE (Euler, RK4, Heun)
 
-returns: 
-array - Y - the solution values and the 
-array - t  - time for these solutions
+Returns: 
+Y - array: the solution at the next step time step
+t - float: the next time step
 
 '''
 

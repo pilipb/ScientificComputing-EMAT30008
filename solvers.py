@@ -1,14 +1,19 @@
 import numpy as np
 
 '''
-The steps will make a step of size delta_t using the method specified by the function step.
+The steps will make an integration step of size delta_t 
+using the method specified by the function step.
 
-param: f - the function to be integrated (with inputs (Y,t)) in first order form
-param: y0 - the initial value of the solution
-param: t0 - the initial value of time
-param: delta_t - the step size
+Parameters:
+f - function: the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
+y0 - array: the initial value of the solution
+t0 - float: the initial value of time
+delta_t - float: the step size
 
-returns: y1 - the solution at the next step and the time t1 at the next step
+Returns:
+y1 - array: the solution at the next step time step
+t1 - float: the next time step
+
 '''
 
 # Euler step - generalised to any number of dimensions
