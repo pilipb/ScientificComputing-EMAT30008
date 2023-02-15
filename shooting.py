@@ -90,16 +90,21 @@ def period(Y, t):
     # find the last index where the solution is greater than the average value
     max_index = np.argmax(Y[:,0] - avg_value)
     # reduce the Y and t arrays to only the values before the max value
-    Y = Y[:max_index-50] 
-    t = t[:max_index-50]
+    Ys = Y[:max_index-50] 
+    ts = t[:max_index-50]
     # find the last index where the solution is less than the average value
-    min_index = np.argmax(avg_value - Y[:,0])
+    min_index = np.argmax(avg_value - Ys[:,0])
+    # reduce the Y and t arrays to only the values before the min value
+    Ys = Y[:min_index-50]
+    ts = t[:min_index-50]
+    # find the last index where the solution is greater than the average value
+    max2_index = np.argmax(Ys[:,0] - avg_value)
     # find the period
-    period_idx = max_index - min_index
-    T = (t[period_idx] - t[0])*2
+    period_idx = max_index - max2_index
+    T = (t[period_idx] - t[0])
     # return one period of the solutions
-    Y = Y[min_index-period_idx:max_index]
-    t = t[min_index-period_idx:max_index]
+    Y = Y[max2_index:max_index]
+    t = t[max2_index:max_index]
 
     return T, Y, t
 
