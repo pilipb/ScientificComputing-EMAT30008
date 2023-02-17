@@ -35,7 +35,7 @@ def solve_to(f, y0, t0, t1, delta_t, method):
     method = methods[method]
 
     # loop until we reach the end time
-    while t[-1] < t1:
+    while t[-1] <= t1-delta_t:
         # take a step
         y1, t0 = method(f, Y[-1], t[-1], delta_t)
 
@@ -43,6 +43,13 @@ def solve_to(f, y0, t0, t1, delta_t, method):
         Y.append(y1)
         t.append(t0)
         # print(t)
+    
+    # for the last step, we need to take a step of t1 - t[-1]
+    last_step = t1 - t[-1]
+    y1, t0 = method(f, Y[-1], t[-1], last_step)
+    Y.append(y1)
+    t.append(t0)
+
 
 
     return np.array(Y), np.array(t)
