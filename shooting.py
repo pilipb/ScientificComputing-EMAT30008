@@ -33,13 +33,14 @@ def shooting(f, Y0, T):
 
     # derive better starting guess from the solution
     [x0,y0] = [np.median(Y[:,0]), np.median(Y[:,1])]
+    
     '''
     The initial conditions are not always in the correct range. To fix this
     I have found the phase space trajectory for random guess and given that it is
     going to end up in the periodic solution, I have found the median of the solution
     and used that as the starting guess for the root finding method as this will be
     on the periodic phase space trajectory.
-    
+
     '''
 
     # define the find dx/dt function
