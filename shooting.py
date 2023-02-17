@@ -3,6 +3,7 @@ from solvers import *
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize as scipy
+import math
 
 
 '''
@@ -26,6 +27,20 @@ def shooting(f, Y0, T):
     # unpack the initial conditions and period guess
     x0,y0  = Y0
     T_guess = T
+
+    # test the initial conditions guess
+    Y , _ = solve_to(f, [x0, y0], 0, 300, 0.01, 'RK4')
+
+    # derive better starting guess from the solution
+    [x0,y0] = [np.median(Y[:,0]), np.median(Y[:,1])]
+    '''
+    The initial conditions are not always in the correct range. To fix this
+    I have found the phase space trajectory for random guess and given that it is
+    going to end up in the periodic solution, I have found the median of the solution
+    and used that as the starting guess for the root finding method as this will be
+    on the periodic phase space trajectory.
+    
+    '''
 
     # define the find dx/dt function
     def dxdt( Y, t, f=f):
@@ -194,8 +209,19 @@ if __name__ == '__main__':
         x, y = Y
         return np.array([x*(1-x) - (a*x*y)/(d+x) , b*y*(1- (y/x))])
     
+    '''
+    the original guess has to be close to the solution
+
+    '''
+
+    # initial guess
+    Y0 = [2,3]
+    
     # solve the ode using the shooting method
-    Y0, T = shooting(ode, [0.4,0.2],20)
+    Y0, T = shooting(ode, Y0,20)
+
+    print('Period = %.2f' %T, '\n')
+    print('Y0 = ', Y0, '\n')
 
     # solve for one period of the solution
     Y,t = solve_to(ode, Y0, 0, T, 0.01, 'RK4')
