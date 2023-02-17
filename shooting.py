@@ -21,39 +21,53 @@ T - float: the period of the solution
 '''
 
 
-def shooting(f, y0):
+def shooting(f, Y0, T):
 
-    Y = [y0]
+    # unpack the initial conditions and period guess
+    x0,y0  = Y0
+    T_guess = T
 
-    # find dx/dt 
+    # define the find dx/dt function
     def dxdt( Y, t, f=f):
         return f(Y, t)[0]
 
+
+    # define the function that will be solved for the initial conditions and period
     def fun(X):
 
         x0, y0, T = X
 
         Y , t = solve_to(f, [x0, y0], 0, T, 0.01, 'RK4')
 
-        row1 = Y[0,0] - Y[-1,0] # x(0) - x(T)
-        row2 = Y[0,1] - Y[-1,1] # y(0) - y(T)
-        row3 = dxdt([Y[-1,0], Y[-1,1]], T) # dx/dt(T)
-
+        row1 = Y[0,0] - Y[-1,0] # x(0) - x(T) = 0
+        row2 = Y[0,1] - Y[-1,1] # y(0) - y(T) = 0
+        row3 = dxdt([Y[-1,0], Y[-1,1]], T) # dx/dt(T) = 0
+        
         return np.array([row1, row2, row3])
 
     # solve the system of equations for the initial conditions [x0, y0] and period T that satisfy the boundary conditions
-    sol = scipy.fsolve(fun, [0.4, 0.3, 20])
-    x0, y0, T = sol
+    sol = scipy.fsolve(fun, [x0, y0, T_guess])
+
+    '''
+    Currently, the initial conditions do not always allow fsolve to find the correct solution. This is because the initial conditions
+    are not always in the correct range. To fix this, we can use a root finding method to find the initial conditions that satisfy
+    the boundary conditions. 
+
+    The starting guess must fall on the periodic phase space trajectory. 
+    
+    '''
+
+    x0, y0, period = sol
 
     # return the period and initial conditions that cause the limit cycle
-    return [x0, y0], T
+    return [x0, y0], period
 
 
 
 
 
 '''
-The shooting method will solve the ODE using root finding method to find the limit cycle
+The shooting_dev method will solve the ODE using root finding method to find the limit cycle
 of the ODE. The method calls the solve_to method to solve the ODE at each guess.
 
 The function also plots the solution at each guess.
@@ -181,7 +195,7 @@ if __name__ == '__main__':
         return np.array([x*(1-x) - (a*x*y)/(d+x) , b*y*(1- (y/x))])
     
     # solve the ode using the shooting method
-    Y0, T = shooting(ode, [0.16,0.1, 10])
+    Y0, T = shooting(ode, [0.4,0.2],20)
 
     # solve for one period of the solution
     Y,t = solve_to(ode, Y0, 0, T, 0.01, 'RK4')
@@ -198,8 +212,7 @@ if __name__ == '__main__':
     plt.plot(t, Y)
     plt.xlabel('t')
     plt.ylabel('x(t) and y(t)')
-    plt.legend('x(t)', 'y(t)')
-    # plt.title('Period = %.2f, starting condition = [%.4f, 0.1, 0.1] '%( T, guess ))
+    plt.title('Period = %.2f' %T)
     plt.show()
         
 
