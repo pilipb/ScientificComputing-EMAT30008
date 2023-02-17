@@ -21,6 +21,9 @@ guess - float: the starting condition that gives the limit cycle
 
 '''
 
+
+
+
 def shooting(f, y0, method):
 
     # initialize the solution and constants
