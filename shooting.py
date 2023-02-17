@@ -2,6 +2,55 @@ from solve_to import *
 from solvers import *
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.optimize as scipy
+
+
+'''
+Implementing a numerical shooting method to solve an ODE to find a periodic solution
+This method will solve the ODE using root finding method to find the limit cycle, using scipy.optimize.fsolve to
+find the initial conditions and period that satisfy the boundary conditions.
+
+Parameters:
+f - function: the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
+y0 - array: the initial value of the solution
+
+Returns:
+Y - array: the initial conditions that cause the solution to be periodic
+T - float: the period of the solution
+
+'''
+
+
+def shooting(f, y0):
+
+    Y = [y0]
+
+    # find dx/dt 
+    def dxdt( Y, t, f=f):
+        return f(Y, t)[0]
+
+    def fun(X):
+
+        x0, y0, T = X
+
+        Y , t = solve_to(f, [x0, y0], 0, T, 0.01, 'RK4')
+
+        row1 = Y[0,0] - Y[-1,0] # x(0) - x(T)
+        row2 = Y[0,1] - Y[-1,1] # y(0) - y(T)
+        row3 = dxdt([Y[-1,0], Y[-1,1]], T) # dx/dt(T)
+
+        return np.array([row1, row2, row3])
+
+    # solve the system of equations for the initial conditions [x0, y0] and period T that satisfy the boundary conditions
+    sol = scipy.fsolve(fun, [0.4, 0.3, 20])
+    x0, y0, T = sol
+
+    # return the period and initial conditions that cause the limit cycle
+    return [x0, y0], T
+
+
+
+
 
 '''
 The shooting method will solve the ODE using root finding method to find the limit cycle
@@ -24,7 +73,7 @@ guess - float: the starting condition that gives the limit cycle
 
 
 
-def shooting(f, y0, method):
+def shooting_dev(f, y0, method):
 
     # initialize the solution and constants
     Y = [y0]  
@@ -121,26 +170,36 @@ the ode is the Lotka-Volterra equation
 
 if __name__ == '__main__':
     
-    # define a simple 3rd order ode
-    a = -1
-    b = 1
+    # define new ode
+    a = 1
+    d = 0.1
+    b = 0.1
 
-    def ode3(Y, t, args = (a , b)):
-        a, b = args
-        x, y, z = Y
-        return np.array([b*x - y + a*x*(x**2 + y**2), x + b*y + a*y*(x**2 + y**2) , -z]) 
-
+    def ode(Y, t, args = (a, b, d)):
+        a, b, d = args
+        x, y = Y
+        return np.array([x*(1-x) - (a*x*y)/(d+x) , b*y*(1- (y/x))])
+    
     # solve the ode using the shooting method
-    Y,t,guess = shooting(ode3, [0.16,0.1,0.1],'RK4')
-    plt.show()
+    Y0, T = shooting(ode, [0.16,0.1, 10])
 
-    # plot the period
-    T, Y, t = period(Y,t)
+    # solve for one period of the solution
+    Y,t = solve_to(ode, Y0, 0, T, 0.01, 'RK4')
+
+    # # solve the ode using the shooting method
+    # Y,t,guess = shooting_dev(ode3, [0.16,0.1,0.1],'RK4')
+    # plt.show()
+
+    # # plot the period
+    # T, Y, t = period(Y,t)
+
+
+
     plt.plot(t, Y)
     plt.xlabel('t')
     plt.ylabel('x(t) and y(t)')
     plt.legend('x(t)', 'y(t)')
-    plt.title('Period = %.2f, starting condition = [%.4f, 0.1, 0.1] '%( T, guess ))
+    # plt.title('Period = %.2f, starting condition = [%.4f, 0.1, 0.1] '%( T, guess ))
     plt.show()
         
 
