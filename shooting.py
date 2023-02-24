@@ -15,6 +15,7 @@ parameters:
 ----------------------------
 f - function: the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
 y0 - array: the initial value of the solution
+T - float: an initial guess for the period of the solution
 
 returns:
 ----------------------------
