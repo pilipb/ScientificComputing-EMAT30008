@@ -4,13 +4,15 @@ import numpy as np
 The steps will make an integration step of size delta_t 
 using the method specified by the function step.
 
-Parameters:
+parameters:
+---------------------------
 f - function: the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
 y0 - array: the initial value of the solution
 t0 - float: the initial value of time
 delta_t - float: the step size
 
-Returns:
+returns:
+---------------------------
 y1 - array: the solution at the next step time step
 t1 - float: the next time step
 

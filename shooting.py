@@ -11,11 +11,13 @@ Implementing a numerical shooting method to solve an ODE to find a periodic solu
 This method will solve the ODE using root finding method to find the limit cycle, using scipy.optimize.fsolve to
 find the initial conditions and period that satisfy the boundary conditions.
 
-Parameters:
+parameters:
+----------------------------
 f - function: the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
 y0 - array: the initial value of the solution
 
-Returns:
+returns:
+----------------------------
 Y - array: the initial conditions that cause the solution to be periodic
 T - float: the period of the solution
 
