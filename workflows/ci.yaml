@@ -1,8 +1,5 @@
 name: Run Python Tests
 on:
-  commit:
-    branches:
-      - master
   push:
     branches:
       - master
