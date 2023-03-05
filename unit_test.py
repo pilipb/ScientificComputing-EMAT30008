@@ -22,26 +22,37 @@ and the same for the shooting function
 '''
 
 class solver_test(unittest.TestCase):
-    def test_euler(self):
-        step = 3
-        def func(x, t):
-            return x
-        x1, t1 = euler_step(func, 0,0,step)
-        self.assertEqual(t1, step)
+    # test solve_to
+    def test_solve_to(self):
+        # test f
+        with self.assertRaises(ValueError):
+            solve_to(1, [0], 0, 10, 0.01, 'Euler')
 
-    def test_rk4(self):
-        step = 3
-        def func(x, t):
-            return x
-        x1, t1 = rk4_step(func, 0,0,step)
-        self.assertEqual(t1, step)
+        # test y0
+        with self.assertRaises(ValueError):
+            solve_to(lambda x, y: x, 1, 0, 10, 0.01, 'Euler')
 
-    def test_heun(self):
-        step = 3
-        def func(x, t):
-            return x
-        x1, t1 = heun_step(func, 0,0,step)
-        self.assertEqual(t1, step)
+        # test t0
+        with self.assertRaises(ValueError):
+            solve_to(lambda x, y: x, [0], '0', 10, 0.01, 'Euler')
+
+        # test t1
+        with self.assertRaises(ValueError):
+            solve_to(lambda x, y: x, [0], 0, '10', 0.01, 'Euler')
+
+        # test delta_t
+        with self.assertRaises(ValueError):
+            solve_to(lambda x, y: x, [0], 0, 10, '0.01', 'Euler')
+
+        # test method
+        with self.assertRaises(ValueError):
+            solve_to(lambda x, y: x, [0], 0, 10, 0.01, 'Eulerian')
+
+    # def test_shooting(self):
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
