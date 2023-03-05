@@ -22,6 +22,10 @@ from solvers import *
 
 # solve_to method
 def solve_to(f, y0, t0, t1, delta_t, method):
+
+    # run error check
+    error_check(f, y0, t0, delta_t,t1=t1, method = method)
+
     # initialize the solution
     Y = [y0]
     t = [t0]
