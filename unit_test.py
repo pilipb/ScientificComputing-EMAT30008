@@ -43,6 +43,13 @@ class solver_test(unittest.TestCase):
         t - float: the next time step
     
         '''
+
+        # test that correct inputs work
+        try:
+            solve_to(lambda x, y: x, np.ndarray([0]), 0, 10, 0.01, 'Euler')
+        except:
+            self.fail('solve_to function failed with correct inputs')
+
         # test f
         with self.assertRaises(ValueError):
             solve_to(1, np.ndarray([0]), 0, 10, 0.01, 'Euler')
@@ -67,11 +74,26 @@ class solver_test(unittest.TestCase):
         with self.assertRaises(ValueError):
             solve_to(lambda x, y: x, np.ndarray([0]), 0, 10, 0.01, 'Eulerian')
 
-        # test that correct inputs work
-        try:
-            solve_to(lambda x, y: x, np.ndarray([0]), 0, 10, 0.01, 'Euler')
-        except:
-            self.fail('solve_to function failed with correct inputs')
+
+        # test solve_to outputs
+        def test_ode(y, t):
+            return np.array([y[1], -y[0]])
+        
+        # test that the output is correct
+        Y, t = solve_to(test_ode, np.array([1, 0]), 0, 2*np.pi, 0.01, 'Euler')
+
+        # check output type
+        self.assertIsInstance(Y, (np.ndarray, list))
+        self.assertIsInstance(t, (list, np.ndarray))
+
+        # check that the final time is correct
+        self.assertAlmostEqual(t[-1], 2*np.pi)
+
+        
+
+
+        
+
 
     def test_shooting(self):
         '''
