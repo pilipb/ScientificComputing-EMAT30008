@@ -83,13 +83,16 @@ class solver_test(unittest.TestCase):
         Y, t = solve_to(test_ode, np.array([1, 0]), 0, 2*np.pi, 0.01, 'Euler')
 
         # check output type
-        self.assertIsInstance(Y, (np.ndarray, list))
-        self.assertIsInstance(t, (list, np.ndarray))
+        self.assertIsInstance(Y, (np.ndarray, list), msg='The solution is not a list or array')
+        self.assertIsInstance(t, (list, np.ndarray), msg='The time is not a list or array')
 
         # check that the final time is correct
-        self.assertAlmostEqual(t[-1], 2*np.pi)
+        self.assertAlmostEqual(t[-1], 2*np.pi, places=3, msg='The final time is not correct')
 
-        
+        # check that the solution is correct
+        self.assertAlmostEqual(Y[-1, 0], 1.0319, places=3, msg='The solution is not correct')
+
+
 
 
         
@@ -113,33 +116,55 @@ class solver_test(unittest.TestCase):
                     and sol[:-1] is the initial conditions for a solution with period sol[-1]
 
         '''
-        # define a test ode
-        def test_ode(y, t):
-            return np.array([y[1], -y[0]])
+
+        # define new periodic test ode
+        a = 1
+        d = 0.1
+        b = 0.1
+
+        def test_ode(Y, t, args = (a, b, d)):
+            a, b, d = args
+            # print('Y = ', Y)
+            x, y = Y
+            return np.array([x*(1-x) - (a*x*y)/(d+x) , b*y*(1- (y/x))])
+        
+
+        # initial guess
+        Y0 = [2,3]
+
+
 
         # test it works with correct inputs
         try:
-            shooting(test_ode, np.array([1, 0]), 2*np.pi)
+            shooting(test_ode,Y0, 20)
         except:
             self.fail('shooting function failed with correct inputs')
 
         # test f
-        with self.assertRaises(ValueError):
-            shooting(1, np.array([1, 0]), 2*np.pi)
+        with self.assertRaises(ValueError, msg='f is not a function'):
+            shooting(1, Y0, 20)
 
         # test y0
-        with self.assertRaises(ValueError):
-            shooting(test_ode, 1, 2*np.pi)
+        with self.assertRaises(ValueError, msg='y0 is not an array'):
+            shooting(test_ode, 1, 20)
 
         # test T
-        with self.assertRaises(ValueError):
-            shooting(test_ode, np.array([1, 0]), '2*np.pi')
+        with self.assertRaises(ValueError, msg='T is not a float'):
+            shooting(test_ode, Y0, '20')
 
+        # test that the output is correct
+        sol = shooting(test_ode, Y0, 20)
 
+        # check output type
+        self.assertIsInstance(sol, (np.ndarray, list), msg='The solution is not a list or array')
 
+        # check that the final time is correct
+        self.assertAlmostEqual(sol[-1], 34.118, places=2, msg='The period is not correct')
 
-
-
+        # check that the solution is a periodic solution
+        Y, t = solve_to(test_ode, sol[:-1], 0, sol[-1], 0.01, 'Euler')
+        self.assertAlmostEqual(Y[-1, 0], Y[0, 0], places=2, msg='The solution is not a periodic solution')
+        self.assertAlmostEqual(Y[-1, 1], Y[0, 1], places=2, msg='The solution is not a periodic solution')
 
 if __name__ == '__main__':
     unittest.main()
