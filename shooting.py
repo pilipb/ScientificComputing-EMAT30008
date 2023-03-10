@@ -28,14 +28,14 @@ T - float: the period of the solution
 def shooting(f, Y0, T):
 
     # unpack the initial conditions and period guess
-    x0,y0  = Y0
     T_guess = T
 
     # test the initial conditions guess
-    Y , _ = solve_to(f, [x0, y0], 0, 300, 0.01, 'RK4')
+    Y , _ = solve_to(f, Y0, 0, 300, 0.01, 'RK4')
 
     # derive better starting guess from the solution
-    [x0,y0] = [np.median(Y[:,0]), np.median(Y[:,1])]
+    # [x0,y0] = [np.median(Y[:,0]), np.median(Y[:,1])]
+    y0 = np.median(Y,axis=0)
     
     '''
     The initial conditions are not always in the correct range. To fix this
@@ -52,20 +52,30 @@ def shooting(f, Y0, T):
 
 
     # define the function that will be solved for the initial conditions and period
-    def fun(X):
+    def fun(initial_vals):
+        print(initial_vals)
+        # unpack the initial conditions and period guess
+        T = initial_vals[-1]
+        y0 = initial_vals[:-1]
 
-        x0, y0, T = X
+        Y , _ = solve_to(f, y0, 0, T, 0.01, 'RK4')
 
-        Y , t = solve_to(f, [x0, y0], 0, T, 0.01, 'RK4')
+        num_dim = len(y0)
+        row = np.zeros(num_dim)
 
-        row1 = Y[0,0] - Y[-1,0] # x(0) - x(T) = 0
-        row2 = Y[0,1] - Y[-1,1] # y(0) - y(T) = 0
-        row3 = dxdt([Y[-1,0], Y[-1,1]], T) # dx/dt(T) = 0
-        
-        return np.array([row1, row2, row3])
 
-    # solve the system of equations for the initial conditions [x0, y0] and period T that satisfy the boundary conditions
-    sol = scipy.fsolve(fun, [x0, y0, T_guess])
+        for i in range(num_dim):
+            row[i] = Y[-1,i] - y0[i]
+  
+        row = np.append(row,dxdt(Y[-1],T))
+
+        output = np.array(row)
+        return output
+
+    # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
+    y0 = np.append(y0, T_guess)
+
+    sol = scipy.fsolve(fun, y0)
 
     '''
     Currently, the initial conditions do not always allow fsolve to find the correct solution. This is because the initial conditions
@@ -76,15 +86,62 @@ def shooting(f, Y0, T):
     
     '''
 
-    x0, y0, period = sol
+    
 
     # return the period and initial conditions that cause the limit cycle
-    return [x0, y0], period
+    return sol
 
 
+#### TEST ####
+
+''' 
+example code to test the shooting method and period function
+the ode is the Lotka-Volterra equation
+'''
+
+if __name__ == '__main__':
+    
+    # define new ode
+    a = 1
+    d = 0.1
+    b = 0.1
+
+    def ode(Y, t, args = (a, b, d)):
+        a, b, d = args
+        # print('Y = ', Y)
+        x, y = Y
+        return np.array([x*(1-x) - (a*x*y)/(d+x) , b*y*(1- (y/x))])
 
 
+    '''
+    the original guess has to be close to the solution
 
+    '''
+
+    # initial guess
+    Y0 = [2,3]
+    
+    # solve the ode using the shooting method
+    sol = shooting(ode, Y0,20)
+
+#    extract the period and initial conditions
+    T = sol[-1]
+    Y0 = sol[:-1]
+
+    print('Period = %.2f' %T, '\n')
+    print('Y0 = ', Y0, '\n')
+
+    # solve for one period of the solution
+    Y,t = solve_to(ode, Y0, 0, T, 0.01, 'RK4')
+
+    plt.plot(t, Y)
+    plt.xlabel('t')
+    plt.ylabel('x(t) and y(t)')
+    plt.title('Period = %.2f' %T)
+    plt.show()
+        
+
+###################DEVELOPMENT#######################
 '''
 The shooting_dev method will solve the ODE using root finding method to find the limit cycle
 of the ODE. The method calls the solve_to method to solve the ODE at each guess.
@@ -102,8 +159,6 @@ t - array: the time solution at the final guess (limit cycle)
 guess - float: the starting condition that gives the limit cycle
 
 '''
-
-
 
 
 def shooting_dev(f, y0, method):
@@ -192,58 +247,3 @@ def period(Y, t):
     t = t[max2_index:max_index]
 
     return T, Y, t
-
-
-#### TEST ####
-
-''' 
-example code to test the shooting method and period function
-the ode is the Lotka-Volterra equation
-'''
-
-if __name__ == '__main__':
-    
-    # define new ode
-    a = 1
-    d = 0.1
-    b = 0.1
-
-    def ode(Y, t, args = (a, b, d)):
-        a, b, d = args
-        x, y = Y
-        return np.array([x*(1-x) - (a*x*y)/(d+x) , b*y*(1- (y/x))])
-    
-    '''
-    the original guess has to be close to the solution
-
-    '''
-
-    # initial guess
-    Y0 = [2,3]
-    
-    # solve the ode using the shooting method
-    Y0, T = shooting(ode, Y0,20)
-
-    print('Period = %.2f' %T, '\n')
-    print('Y0 = ', Y0, '\n')
-
-    # solve for one period of the solution
-    Y,t = solve_to(ode, Y0, 0, T, 0.01, 'RK4')
-
-    # # solve the ode using the shooting method
-    # Y,t,guess = shooting_dev(ode3, [0.16,0.1,0.1],'RK4')
-    # plt.show()
-
-    # # plot the period
-    # T, Y, t = period(Y,t)
-
-
-
-    plt.plot(t, Y)
-    plt.xlabel('t')
-    plt.ylabel('x(t) and y(t)')
-    plt.title('Period = %.2f' %T)
-    plt.show()
-        
-
-
