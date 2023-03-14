@@ -60,9 +60,13 @@ def error_check(f, y0, t0, delta_t, t1=None, method=None):
     if t1 is not None:
         if not isinstance(t1, (int, float)):
             raise ValueError('t1 must be a number')
-        elif t1 <= t0:
+        elif t1 < t0:
             raise ValueError('t1 must be greater than t0')
     if method is not None:
         if not isinstance(method, str):
             raise ValueError('method must be a string')
+        
+    # check the length of y0 is the same as the number of dimensions in f
+    if len(y0) != len(f(y0, t0)):
+        raise ValueError('y0 must have the same number of dimensions as f')
     
