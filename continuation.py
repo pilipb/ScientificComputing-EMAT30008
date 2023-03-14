@@ -41,31 +41,78 @@ Y0 = np.array([0.1, 0.1])
 # define the parameter increment
 db = 0.4
 
-while b < 2:
-    # run shooting method to find the solution
-    sol = shooting(hopf_bifurcation, Y0, 2*np.pi)
+'''
+performing pseudo-arclength continuation
 
-    # unpack the solution
-    Y = sol[:-1]
-    T = sol[-1]
+the pseudo-arclength equation is added to the ODE system to be integrated
+'''
 
-    # get solution
-    y, t = solve_to(hopf_bifurcation, Y0, 0, T, 0.01, 'RK4')
+# define the function to be integrated
+'''
+du . (u - u_guess) + dp .(p - p_guess) = 0
 
-    # plot the solution
-    plt.plot(t, y, label = 'b = {}'.format(b))
+u is state vector
+u_guess is predicted state vector
+du is the secant of the state vector
+p is the parameter vector
+p_guess is the predicted parameter vector
+dp is the secant of the parameter vector
 
-    # increment the parameter
-    b += db
+'''
 
-    # set the initial conditions to the previous solution
-    Y0 = Y
+# unpack the initial conditions and period guess
+T_guess = T
 
-# plot the solution
-# put legend outside the plot small
-plt.legend()
-plt.title('Hopf Bifurcation')
-plt.xlabel('t')
-plt.ylabel('x(t) and y(t)')
-plt.show()
+# y0 = Y0
+
+# test the initial conditions guess
+Y , _ = solve_to(hopf_bifurcation, Y0, 0, 300, 0.01, 'RK4')
+
+# derive better starting guess from the solution
+# [x0,y0] = [np.median(Y[:,0]), np.median(Y[:,1])]
+y0 = np.median(Y,axis=0)
+
+'''
+The initial conditions are not always in the correct range. To fix this
+I have found the phase space trajectory for random guess and given that it is
+going to end up in the periodic solution, I have found the median of the solution
+and used that as the starting guess for the root finding method as this will be
+on the periodic phase space trajectory.
+
+'''
+
+# define the find dx/dt function
+def dxdt( Y, t, f=f):
+    return f(Y, t)[0]
+
+
+# define the function that will be solved for the initial conditions and period
+def fun(initial_vals):
+    print(initial_vals)
+    # unpack the initial conditions and period guess
+    T = initial_vals[-1]
+    y0 = initial_vals[:-1]
+
+    Y , _ = solve_to(f, y0, 0, T, 0.01, 'RK4')
+
+    num_dim = len(y0)
+    row = np.zeros(num_dim)
+
+
+    for i in range(num_dim):
+        row[i] = Y[-1,i] - y0[i]
+
+    row = np.append(row,dxdt(Y[-1],T))
+
+    # add the pseudo-arclength equation
+    psu_eq = 
+    row = np.append(row, )
+
+    output = np.array(row)
+    return output
+
+# solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
+y0 = np.append(y0, T_guess)
+
+sol = scipy.fsolve(fun, y0)
 
