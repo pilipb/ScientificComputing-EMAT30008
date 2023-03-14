@@ -21,7 +21,11 @@ t - float: the next time step
 from solvers import *
 
 # solve_to method
-def solve_to(f, y0, t0, t1, delta_t, method):
+def solve_to(f, y0, t0, t1, delta_t, method, args=()):
+
+    # unpack args
+    if args:
+        args = args
 
     # run error check
     error_check(f, y0, t0, delta_t,t1=t1, method = method)
@@ -43,7 +47,10 @@ def solve_to(f, y0, t0, t1, delta_t, method):
     # loop until we reach the end time
     while t[-1] <= t1-delta_t:
         # take a step
-        y1, t0 = method(f, Y[-1], t[-1], delta_t)
+        if args:
+            y1, t0 = method(f, Y[-1], t[-1], delta_t, args)
+        else:
+            y1, t0 = method(f, Y[-1], t[-1], delta_t)
 
         # append the solution
         Y.append(y1)

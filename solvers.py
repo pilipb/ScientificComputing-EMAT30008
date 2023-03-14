@@ -27,14 +27,27 @@ def euler_step(f, y0, t0, delta_t):
     return y1, t1
 
 # RK4 step - generalised to any number of dimensions
-def rk4_step(f, y0, t0, delta_t):
-    # error_check(f, y0, t0, delta_t)
-    k1 = delta_t * f(y0, t0)
-    k2 = delta_t * f(y0 + delta_t/2 * k1, t0 + delta_t/2)
-    k3 = delta_t * f(y0 + delta_t/2 * k2, t0 + delta_t/2)
-    k4 = delta_t * f(y0 + delta_t * k3, t0 + delta_t)
-    y1 = y0 + (k1)/6 + 2*(k2)/6 + 2*(k3)/6 + (k4)/6
-    t1 = t0 + delta_t
+def rk4_step(f, y0, t0, delta_t, args=()):
+    # unpack args
+    if args:
+        args = args
+
+        k1 = delta_t * f(y0, t0, args)
+        k2 = delta_t * f(y0 + delta_t/2 * k1, t0 + delta_t/2, args)
+        k3 = delta_t * f(y0 + delta_t/2 * k2, t0 + delta_t/2, args)
+        k4 = delta_t * f(y0 + delta_t * k3, t0 + delta_t,   args)
+        y1 = y0 + (k1)/6 + 2*(k2)/6 + 2*(k3)/6 + (k4)/6
+        t1 = t0 + delta_t
+
+    else:
+
+        k1 = delta_t * f(y0, t0)
+        k2 = delta_t * f(y0 + delta_t/2 * k1, t0 + delta_t/2)
+        k3 = delta_t * f(y0 + delta_t/2 * k2, t0 + delta_t/2)
+        k4 = delta_t * f(y0 + delta_t * k3, t0 + delta_t)
+        y1 = y0 + (k1)/6 + 2*(k2)/6 + 2*(k3)/6 + (k4)/6
+        t1 = t0 + delta_t
+
     return y1, t1
 
 
