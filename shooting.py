@@ -30,6 +30,8 @@ def shooting(f, Y0, T):
     # unpack the initial conditions and period guess
     T_guess = T
 
+    # y0 = Y0
+
     # test the initial conditions guess
     Y , _ = solve_to(f, Y0, 0, 300, 0.01, 'RK4')
 
