@@ -1,28 +1,65 @@
-def u(x):
-    return x**2
+'''
+solving poisson equation using finite difference method
+Dirichlet boundary condition
 
-a = 1.0
-dx = 1e-1
+in domain:
+a <= x <= b
+boundary condition:
+u(a) = alpha
+u(b) = beta
 
-# Forwards difference
-dudx = (u(a+dx) - u(a))/(dx)
+equation:
+u''(x) + q(x) = 0
 
-print('Forwards diff dudx = ', dudx)
+'''
 
-# Backwards difference
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import root
 
-dudx = (u(a) - u(a-dx))/(dx)
+# step 1: discretise the domain into grid points
 
-print('Backwards diff dudx = ', dudx)
+def discretise(a, b, N):
+    dx = (b - a)/N
+    xi = np.linspace(0, N, N+1)
 
-# Central difference
+    return dx, xi
 
-dudx = (u(a+dx) - u(a-dx))/(2*dx)
+# step 2: solve using scipy root
 
-print('Central diff dudx = ', dudx)
+# write system in form of f(u) = 0
 
-# second order central difference
+def f(u, dx, q, alpha, beta):
+    f_1 = (u[2] - 2*u[0] + alpha)/dx**2 + q[1]
+    f_i = (u[2:] - 2*u[1:-1] + u[:-2])/dx**2 + q[1:-1]
+    f_N1 = (beta - 2*u[-1] + u[-2])/dx**2 + q[-2]
 
-dudx = (u(a+dx) - 2*u(a) + u(a-dx))/(dx**2)
+    return np.concatenate(([f_1], f_i, [f_N1]))
 
-print('Second order central diff dudx = ', dudx)
+
+
+# step 3: solve using Numpy - linalg.solve
+
+# A . u = - b - dx**2 * q
+
+def A_matrix(N):
+    A = np.zeros((N+1, N+1))
+    A[0, 0] = 1
+    A[-1, -1] = 1
+    A[1:-1, 1:-1] = np.eye(N-1)
+    A[1:-1, 2:] -= np.eye(N-1)
+    A[1:-1, :-2] -= np.eye(N-1)
+
+    return A
+
+def b_vector(b, dx, q):
+    b_vec = - b - dx**2 * q[1:-1]
+    return b_vec
+
+
+
+
+
+
+
+
