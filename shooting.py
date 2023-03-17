@@ -136,6 +136,12 @@ if __name__ == '__main__':
     # solve for one period of the solution
     Y,t = solve_to(ode, Y0, 0, T, 0.01, 'RK4')
 
+    # check that the solution is one period
+    if np.allclose(Y[0], Y[-1], atol=1e-5):
+        print('Solution is periodic')
+    else:
+        print('Solution is not periodic')
+
     plt.plot(t, Y)
     plt.xlabel('t')
     plt.ylabel('x(t) and y(t)')
