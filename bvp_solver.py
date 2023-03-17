@@ -17,46 +17,49 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import root
 
-# step 1: discretise the domain into grid points
+# option 1: solving using root
 
-def discretise(a, b, N):
-    dx = (b - a)/N
-    xi = np.linspace(0, N, N+1)
+# initialise the problem ---  u''(x) + q(x) = 0
 
-    return dx, xi
+# define the equation
+def q(x):
+    return x**2
 
-# step 2: solve using scipy root
+# define the boundary conditions 
+alpha = 0
+beta = 0
 
-# write system in form of f(u) = 0
+# define the domain edges
+a = 0
+b = 1
 
-def f(u, dx, q, alpha, beta):
-    f_1 = (u[2] - 2*u[0] + alpha)/dx**2 + q[1]
-    f_i = (u[2:] - 2*u[1:-1] + u[:-2])/dx**2 + q[1:-1]
-    f_N1 = (beta - 2*u[-1] + u[-2])/dx**2 + q[-2]
+# define the number of grid points
+N = 100
 
-    return np.concatenate(([f_1], f_i, [f_N1]))
+# discretise the domain
+xi = np.linspace(a, b, N)
 
+# solve using scipy root - f(u) = 0
+def f(u, dx,N, q, alpha, beta):
+    f_1 = (u[2] - 2*u[1] + alpha)/dx**2 + q(xi[1])
+    f_i = (u[2:N] - 2*u[1:N-1] + u[:N-2])/dx**2 + q(xi[1:N-1])
+    f_N1 = (beta - 2*u[N-1] + u[N-2])/dx**2 + q(xi[N-1])
 
-
-# step 3: solve using Numpy - linalg.solve
-
-# A . u = - b - dx**2 * q
-
-def A_matrix(N):
-    A = np.zeros((N+1, N+1))
-    A[0, 0] = 1
-    A[-1, -1] = 1
-    A[1:-1, 1:-1] = np.eye(N-1)
-    A[1:-1, 2:] -= np.eye(N-1)
-    A[1:-1, :-2] -= np.eye(N-1)
-
-    return A
-
-def b_vector(b, dx, q):
-    b_vec = - b - dx**2 * q[1:-1]
-    return b_vec
+    return np.concatenate(([f_1], f_i[:], [f_N1]))
 
 
+dx = (b - a)/N
+# initial guess
+u = np.zeros(N)
+
+sol = root(f, u, args=(dx,N, q, alpha, beta))
+
+# separate the solution
+u = sol.x
+
+# plot the solution
+plt.plot(xi, u, 'o-')
+plt.show()
 
 
 
