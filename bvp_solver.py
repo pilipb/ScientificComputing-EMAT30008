@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import root
 from numpy.linalg import solve
 
-def bvp_solver(q, D, alpha, beta, a, b, N, method='root', boundary='Dirichlet'):
+def bvp_solver(q, a, b, alpha ,beta ,N ,  *args , D = 1.0, method='root', boundary='Dirichlet'):
     '''
     solving poisson equation using finite difference method
     Dirichlet boundary condition
@@ -15,7 +15,7 @@ def bvp_solver(q, D, alpha, beta, a, b, N, method='root', boundary='Dirichlet'):
     u(b) = beta
 
     equation:
-    u''(x) + q(x) = 0
+    D*u''(x) + q(x) = 0
 
     Parameters:
     -----------------
@@ -23,20 +23,22 @@ def bvp_solver(q, D, alpha, beta, a, b, N, method='root', boundary='Dirichlet'):
         the function q(x)
     D: float
         D*u''(x) + q(x) = 0
-    alpha: float
-        the value of u(a)
-    beta: float
-        the value of u(b)
     a: float
         the left edge of the domain
     b: float
         the right edge of the domain
+    alpha: float
+        the value of u(a)
+    beta: float
+        the value of u(b)
     N: int
         the number of grid points
     method: string
         the method to solve the linear system: 'root' for SciPy or 'solve' for Numpy
     boundary: string
         the type of boundary condition: 'Dirichlet' or 'Neumann' or 'Robin'
+    args: tuple
+        the arguments for the function q(x)
 
     Returns:
     -----------------
@@ -56,33 +58,48 @@ def bvp_solver(q, D, alpha, beta, a, b, N, method='root', boundary='Dirichlet'):
 
     # define the matrix A
     A_mat = np.zeros((N, N))
-    A_mat[0, 0] = 1
-    A_mat[-1, -1] = 1
+    A_mat[0, 0] = -2/(dx**2)
+    A_mat[-1, -1] = -2/(dx**2)
     for i in range(1, N-1):
-        A_mat[i, i-1] = -1/(dx**2)
-        A_mat[i, i] = 2/(dx**2) + D
-        A_mat[i, i+1] = -1/(dx**2)
+        A_mat[i, i-1] = 1/(dx**2)
+        A_mat[i, i] = -2/(dx**2) 
+        A_mat[i, i+1] = 1/(dx**2)
+
+    # define an initial guess for the solution
+    u = np.zeros(N)
 
     # define the vector b
-    b_mat = np.zeros(N)
-    b_mat[0] = alpha
-    b_mat[-1] = beta
-    for i in range(1, N-1):
-        b_mat[i] = q(xi[i])
+    b_vec = np.zeros(N)
+    if boundary == 'Dirichlet':
+        b_vec[0] = alpha
+        b_vec[-1] = beta
+
+    # define the vector q
+    q_vec = np.zeros(N)
+    # if there are arguments for the function q(x), then use them
+    if len(args) != 0:
+        for i in range(N):
+            q_vec[i] = q(xi[i], u[i], args)
+    else:
+        for i in range(N):
+            q_vec[i] = q(xi[i], u[i])
+            
 
     # solve the linear system
-    if method == 'root': # use SciPy
-        u = root(lambda x: A_mat.dot(x) - b_mat, np.zeros(N)).x
+    if method == 'scipy': # use SciPy root
+        u = root(lambda u: D*A_mat.dot(u) +  b_vec + q_vec, u).x
 
-    elif method == 'solve': # use Numpy
-        u = solve(A_mat, b_mat)
+    elif method == 'numpy': # use Numpy linalg.solve
+        u = solve(D*A_mat, -1*(b_vec + q_vec))
 
     return u, xi
 
 if __name__ == '__main__':
 
     # define the function q(x)
-    q = lambda x: x**2
+    def q(x, u, args):
+        myu = args[0]
+        return np.exp(myu*u)
 
     # define the parameters
     D = 1
@@ -90,20 +107,34 @@ if __name__ == '__main__':
     beta = 0
     a = 0
     b = 1
-    N = 100
+    N = 10
+    # myu = 4
 
     # define the method and boundary condition
-    method = 'root'
+    method = 'scipy'
     boundary = 'Dirichlet'
 
-    # solve the problem
-    u, xi = bvp_solver(q, D, alpha, beta, a, b, N, method=method, boundary=boundary)
+    # solve for myu in [0, 4]
+    myus = np.linspace(0, 4, 10)
+    for myu in myus:
 
-    # plot the solution
-    plt.plot(xi, u, 'o-')
+        # solve the problem
+        u, xi = bvp_solver(q, a, b, alpha, beta, N, myu, D=D, method=method, boundary=boundary)
+
+        # plot the solution
+        plt.plot(xi, u, 'o-', label='myu = %f' % myu)
+
+    
+    # exact solution for source term q(x) = 1
+    def exact(x):
+        return (-1/(2*D))*(x - a) * (x - b) + ((beta - alpha)/(b - a))*(x- a) + alpha
+
+    # plot the exact solution
+    # plt.plot(xi, exact(xi), '-', label='approximation by q(x) = 1')
+    # plt.title('Bratu problem with q(x) = exp(myu*u) where myu = %f' % myu)
+    plt.legend()
     plt.xlabel('x')
     plt.ylabel('u')
-    plt.title('2nd Order BVP with source term q(x) = x**2, (%s Boundary Condition and %s Method)' % (boundary, method))
     plt.show()
 
 
