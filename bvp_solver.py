@@ -16,6 +16,7 @@ u''(x) + q(x) = 0
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import root
+from numpy.linalg import solve
 
 # option 1: solving using root
 
