@@ -74,23 +74,22 @@ def bvp_solver(q, a, b, alpha ,beta ,N ,  *args , D = 1.0, method='root', bounda
         b_vec[0] = alpha
         b_vec[-1] = beta
 
-    # define the vector q
-    q_vec = np.zeros(N)
-    # if there are arguments for the function q(x), then use them
-    if len(args) != 0:
+    # define the vector q as a function of u
+    def mak_q(q, u, args):
+        q_vec = np.zeros(N)
         for i in range(N):
-            q_vec[i] = q(xi[i], u[i], args)
-    else:
-        for i in range(N):
-            q_vec[i] = q(xi[i], u[i])
-            
+            if len(args) != 0:
+                q_vec[i] = q(xi[i], u[i], args)
+            else:
+                q_vec[i] = q(xi[i], u[i])
+        return q_vec
 
     # solve the linear system
     if method == 'scipy': # use SciPy root
-        u = root(lambda u: D*A_mat.dot(u) +  b_vec + q_vec, u).x
+        u = root(lambda u: D*A_mat.dot(u) +  b_vec + mak_q(q,u,args), u).x
 
     elif method == 'numpy': # use Numpy linalg.solve
-        u = solve(D*A_mat, -1*(b_vec + q_vec))
+        u = solve(D*A_mat, -1*(b_vec + mak_q(q,u,args)))
 
     return u, xi
 
