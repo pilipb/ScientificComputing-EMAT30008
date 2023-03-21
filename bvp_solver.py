@@ -36,7 +36,7 @@ def bvp_solver(q, a, b, alpha ,beta ,N ,  *args , D = 1.0, method='root', bounda
     method: string
         the method to solve the linear system: 'root' for SciPy or 'solve' for Numpy
     boundary: string
-        the type of boundary condition: 'Dirichlet' or 'Neumann' or 'Robin'
+        the type of boundary condition: 'DD' for Dirichlet, Dirichlet, 'DN' for Dirichlet, Neumann, 'DR' for Dirichlet, Robin
     args: tuple
         the arguments for the function q(x)
 
@@ -70,9 +70,40 @@ def bvp_solver(q, a, b, alpha ,beta ,N ,  *args , D = 1.0, method='root', bounda
 
     # define the vector b
     b_vec = np.zeros(N)
-    if boundary == 'Dirichlet':
+
+    # modify the matrix A and vector b according to the boundary condition
+
+    # list of boundary conditions
+    boundary_list = ['D', 'N', 'R']
+
+    # check the boundary condition
+    if boundary[0] not in boundary_list or boundary[1] not in boundary_list:
+        raise ValueError('The boundary condition must be D, N or R')
+    
+    # modify the matrix A and vector b according to the boundary condition for the first point
+    if boundary[0] == 'D':
         b_vec[0] = alpha
+    elif boundary[0] == 'N':
+        b_vec[0] = 2* alpha * dx
+        # modify the matrix A
+        A_mat[1, 0] = 2
+    elif boundary[0] == 'R':
+        b_vec[0] = 2 * alpha * dx
+        # modify the matrix A
+        A_mat[1, 0] = -2*(1 + alpha*dx)
+
+    # modify the matrix A and vector b according to the boundary condition for the last point
+    if boundary[1] == 'D':
         b_vec[-1] = beta
+    elif boundary[1] == 'N':
+        b_vec[-1] = 2* beta * dx
+        # modify the matrix A
+        A_mat[-2, -1] = 2
+    elif boundary[1] == 'R':
+        b_vec[-1] = 2 * beta * dx
+        # modify the matrix A
+        A_mat[-2, -1] = -2*(1 + beta*dx)
+
 
     # define the vector q as a function of u
     def mak_q(q, u, args):
@@ -103,7 +134,7 @@ if __name__ == '__main__':
     # define the parameters
     D = 1
     alpha = 0
-    beta = 0
+    beta = 1
     a = 0
     b = 1
     N = 10
@@ -111,7 +142,7 @@ if __name__ == '__main__':
 
     # define the method and boundary condition
     method = 'scipy'
-    boundary = 'Dirichlet'
+    boundary = 'DR'
 
     # solve for myu in [0, 4]
     myus = np.linspace(0, 4, 10)
