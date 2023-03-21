@@ -114,15 +114,69 @@ def bvp_solver(q, a, b, alpha ,beta ,N ,  *args , D = 1.0, method='root', bounda
             else:
                 q_vec[i] = q(xi[i], u[i])
         return q_vec
+    
+    # create a Thomas algorithm solver
+    def tdma(a, b):
+        '''
+        Thomas algorithm or Tridiagonal matrix algorithm (TDMA) for solving
+        A.x = b
+        where A is a tridiagonal matrix
+
+        
+        Parameters:
+        -----------------
+        a: array
+            the A matrix
+        b: array
+            the b vector
+
+        Returns:
+        -----------------
+        x: array
+            the solution of the linear system
+
+        '''
+        # define the size of the matrix
+        N = len(b)
+        c = np.zeros(N)
+        d = np.zeros(N)
+        x = np.zeros(N)
+
+        # solve the linear system
+        c[0] = a[0, 1]/a[0, 0]
+        d[0] = b[0]/a[0, 0]
+
+        # loop over the matrix
+        for i in range(1, N-1):
+            # solve the linear system
+            c[i] = a[i, i+1]/(a[i, i] - a[i, i-1]*c[i-1])
+            d[i] = (b[i] - a[i, i-1]*d[i-1])/(a[i, i] - a[i, i-1]*c[i-1])
+
+        # solve the last linear system
+        d[-1] = (b[-1] - a[-1, -2]*d[-2])/(a[-1, -1] - a[-1, -2]*c[-2])
+
+        # solve the linear system backwards
+        x[-1] = d[-1]
+        for i in range(N-2, -1, -1):
+            x[i] = d[i] - c[i]*x[i+1]
+
+        return x
 
     # solve the linear system
     if method == 'scipy': # use SciPy root
         u = root(lambda u: D*A_mat.dot(u) +  b_vec + mak_q(q,u,args), u).x
-
-    elif method == 'numpy': # use Numpy linalg.solve
-        u = solve(D*A_mat, -1*(b_vec + mak_q(q,u,args)))
+    elif method == 'numpy': # use Numpy solve
+        u = solve(-D*A_mat, b_vec + mak_q(q, u, args))
+    elif method == 'tdma': # use Thomas algorithm
+        u = tdma(-D*A_mat, b_vec + mak_q(q, u, args))
 
     return u, xi
+
+
+    
+    
+
+
 
 if __name__ == '__main__':
 
@@ -141,7 +195,7 @@ if __name__ == '__main__':
     # myu = 4
 
     # define the method and boundary condition
-    method = 'scipy'
+    method = 'tdma'
     boundary = 'DR'
 
     # solve for myu in [0, 4]
@@ -152,7 +206,7 @@ if __name__ == '__main__':
         u, xi = bvp_solver(q, a, b, alpha, beta, N, myu, D=D, method=method, boundary=boundary)
 
         # plot the solution
-        plt.plot(xi, u, 'o-', label='myu = %f' % myu)
+        plt.plot(xi, u, 'o-', label='myu = %.2f' % myu)
 
     
     # exact solution for source term q(x) = 1
