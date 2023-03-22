@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import root
 from numpy.linalg import solve
 
-def bvp_solver(q, a, b, alpha ,beta ,N ,  *args , D = 1.0, method='root', boundary='Dirichlet'):
+def bvp_solver(q, a, b,N , *args , D = 1.0, alpha = None,beta = None,gamma = None,delta = None,  method='root', boundary='Dirichlet'):
     '''
     solving poisson equation using finite difference method
     Dirichlet boundary condition
@@ -21,24 +21,29 @@ def bvp_solver(q, a, b, alpha ,beta ,N ,  *args , D = 1.0, method='root', bounda
     -----------------
     q: function
         the function q(x)
-    D: float
-        D*u''(x) + q(x) = 0
     a: float
         the left edge of the domain
     b: float
         the right edge of the domain
-    alpha: float
-        the value of u(a)
-    beta: float
-        the value of u(b)
     N: int
         the number of grid points
+    args: tuple
+        the arguments for the function q(x)
+    D: float
+        the diffusion coefficient
+    alpha: float
+        u(a) = alpha, left boundary condition for Dirichlet
+    beta: float or None
+        u(b) = beta, right boundary condition for Dirichlet
+    gamma: float or None
+        u'(a) = gamma, right boundary condition for Neumann
+    delta: float or None
+        u'(b) = delta, right boundary condition for Neumann
     method: string
         the method to solve the linear system: 'root' for SciPy or 'solve' for Numpy
     boundary: string
         the type of boundary condition: 'DD' for Dirichlet, Dirichlet, 'DN' for Dirichlet, Neumann, 'DR' for Dirichlet, Robin
-    args: tuple
-        the arguments for the function q(x)
+
 
     Returns:
     -----------------
@@ -80,29 +85,33 @@ def bvp_solver(q, a, b, alpha ,beta ,N ,  *args , D = 1.0, method='root', bounda
     if boundary[0] not in boundary_list or boundary[1] not in boundary_list:
         raise ValueError('The boundary condition must be D, N or R')
     
+    # check that the corresponding boundary condition is given
+    if boundary[0] == 'D' and alpha == None:
+        raise ValueError('The boundary condition is Dirichlet, but alpha is not given')
+    elif boundary[1] == 'D' and beta == None:
+        raise ValueError('The boundary condition is Dirichlet, but beta is not given')
+    elif boundary[1] == 'N' and gamma == None:
+        raise ValueError('The boundary condition is Neumann, but gamma is not given')
+    elif boundary[1] == 'R' and delta == None:
+        raise ValueError('The boundary condition is Robin, but delta is not given')
+    
+    
     # modify the matrix A and vector b according to the boundary condition for the first point
     if boundary[0] == 'D':
         b_vec[0] = alpha
-    elif boundary[0] == 'N':
-        b_vec[0] = 2* alpha * dx
-        # modify the matrix A
-        A_mat[1, 0] = 2
-    elif boundary[0] == 'R':
-        b_vec[0] = 2 * alpha * dx
-        # modify the matrix A
-        A_mat[1, 0] = -2*(1 + alpha*dx)
+
 
     # modify the matrix A and vector b according to the boundary condition for the last point
     if boundary[1] == 'D':
         b_vec[-1] = beta
     elif boundary[1] == 'N':
-        b_vec[-1] = 2* beta * dx
+        b_vec[-1] = 2* gamma * dx
         # modify the matrix A
         A_mat[-2, -1] = 2
     elif boundary[1] == 'R':
-        b_vec[-1] = 2 * beta * dx
+        b_vec[-1] = 2 * delta * dx
         # modify the matrix A
-        A_mat[-2, -1] = -2*(1 + beta*dx)
+        A_mat[-2, -1] = -2*(1 + delta*dx)
 
 
     # define the vector q as a function of u
@@ -163,11 +172,11 @@ def bvp_solver(q, a, b, alpha ,beta ,N ,  *args , D = 1.0, method='root', bounda
         return x
 
     # solve the linear system
-    if method == 'scipy': # use SciPy root
+    if method == 'scipy': # use SciPy root - use when q is a function of u
         u = root(lambda u: D*A_mat.dot(u) +  b_vec + mak_q(q,u,args), u).x
-    elif method == 'numpy': # use Numpy solve
+    elif method == 'numpy': # use Numpy solve - use when q linear
         u = solve(-D*A_mat, b_vec + mak_q(q, u, args))
-    elif method == 'tdma': # use Thomas algorithm
+    elif method == 'tdma': # use Thomas algorithm - use when the matrix is tridiagonal
         u = tdma(-D*A_mat, b_vec + mak_q(q, u, args))
 
     return u, xi
@@ -195,15 +204,16 @@ if __name__ == '__main__':
     # myu = 4
 
     # define the method and boundary condition
-    method = 'tdma'
-    boundary = 'DR'
+    method = 'scipy'
+    boundary = 'DD'
 
     # solve for myu in [0, 4]
     myus = np.linspace(0, 4, 10)
     for myu in myus:
 
+
         # solve the problem
-        u, xi = bvp_solver(q, a, b, alpha, beta, N, myu, D=D, method=method, boundary=boundary)
+        u, xi = bvp_solver(q, a, b, N, myu,D=D, alpha=alpha, beta=beta,   method=method, boundary=boundary)
 
         # plot the solution
         plt.plot(xi, u, 'o-', label='myu = %.2f' % myu)
