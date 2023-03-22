@@ -173,7 +173,10 @@ def bvp_solver(q, a, b,N , *args , D = 1.0, alpha = None,beta = None,gamma = Non
 
     # solve the linear system
     if method == 'scipy': # use SciPy root - use when q is a function of u
-        u = root(lambda u: D*A_mat.dot(u) +  b_vec + mak_q(q,u,args), u).x
+        sol = root(lambda u: D*A_mat.dot(u) +  b_vec + mak_q(q,u,args), u)
+        u = sol.x
+        if not sol.success:
+            raise ValueError('The solution did not converge')
     elif method == 'numpy': # use Numpy solve - use when q linear
         u = solve(-D*A_mat, b_vec + mak_q(q, u, args))
     elif method == 'tdma': # use Thomas algorithm - use when the matrix is tridiagonal
