@@ -62,10 +62,10 @@ du = 0.1
 
 # define the function that will be solved for the initial conditions and period
 def fun(initial_vals):
-    print(initial_vals)
     # unpack the initial conditions and period guess
     T = initial_vals[-2]
-    y0 = initial_vals[:-2]
+    psu = initial_vals[-3]
+    y0 = initial_vals[:-3]
     b = initial_vals[-1]
 
     Y , t= solve_to(hopf_bifurcation, y0, 0, T, 0.01, 'RK4', args=( b0))
@@ -88,9 +88,27 @@ def fun(initial_vals):
     return output
 
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-y0 = np.array([0.1, 0.1, 10, 0])
+y0 = np.array([0.1, 0.1,0.1, 10, 0])
+
+print('input', y0, 'output', fun(y0))
+
 
 
 
 sol = scipy.fsolve(fun, y0)
+
+# unpack the solution
+T = sol[-2]
+psu = sol[-3]
+y0 = sol[:-3]
+b = sol[-1]
+
+# solve the ODE system
+Y , t= solve_to(hopf_bifurcation, y0, 0, T, 0.01, 'RK4', args=( b0))
+
+# plot the solution
+plt.plot(t, Y[:,0], label='x')
+plt.plot(t, Y[:,1], label='y')
+plt.legend()
+plt.show()
 
