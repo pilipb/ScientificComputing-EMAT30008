@@ -1,28 +1,26 @@
 import numpy as np
 
-'''
-The steps will make an integration step of size delta_t 
-using the method specified by the function step.
-
-parameters:
----------------------------
-f - function: the function to be integrated (with inputs (Y,t, args)) in first order form of n dimensions
-y0 - array: the initial value of the solution
-t0 - float: the initial value of time
-delta_t - float: the step size
-args - array: the arguments to be passed to the function f
-        or None if no arguments are to be passed
-
-returns:
----------------------------
-y1 - array: the solution at the next step time step
-t1 - float: the next time step
-
-'''
-
-# Euler step - generalised to any number of dimensions
-# with added error catching
 def euler_step(f, y0, t0, delta_t, args):
+
+    '''
+    The steps will make an integration step of size delta_t 
+    using the method specified by the function step.
+
+    parameters:
+    ---------------------------
+    f - function: the function to be integrated (with inputs (Y,t, args)) in first order form of n dimensions
+    y0 - array: the initial value of the solution
+    t0 - float: the initial value of time
+    delta_t - float: the step size
+    args - array: the arguments to be passed to the function f
+            or None if no arguments are to be passed
+
+    returns:
+    ---------------------------
+    y1 - array: the solution at the next step time step
+    t1 - float: the next time step
+
+    '''
 
     y1 = y0 + delta_t * f(y0, t0, args)
     t1 = t0 + delta_t
@@ -30,6 +28,27 @@ def euler_step(f, y0, t0, delta_t, args):
 
 # RK4 step - generalised to any number of dimensions
 def rk4_step(f, y0, t0, delta_t, args):
+
+    '''
+    The steps will make an integration step of size delta_t 
+    using the method specified by the function step.
+
+    parameters:
+    ---------------------------
+    f - function: the function to be integrated (with inputs (Y,t, args)) in first order form of n dimensions
+    y0 - array: the initial value of the solution
+    t0 - float: the initial value of time
+    delta_t - float: the step size
+    args - array: the arguments to be passed to the function f
+            or None if no arguments are to be passed
+
+    returns:
+    ---------------------------
+    y1 - array: the solution at the next step time step
+    t1 - float: the next time step
+
+    '''
+
 
     k1 = delta_t * f(y0, t0, args)
     k2 = delta_t * f(y0 + delta_t/2 * k1, t0 + delta_t/2, args)
@@ -43,6 +62,26 @@ def rk4_step(f, y0, t0, delta_t, args):
 
 # Heuns method - generalised to any number of dimensions
 def heun_step(f, y0, t0, delta_t, args):
+
+    '''
+    The steps will make an integration step of size delta_t 
+    using the method specified by the function step.
+
+    parameters:
+    ---------------------------
+    f - function: the function to be integrated (with inputs (Y,t, args)) in first order form of n dimensions
+    y0 - array: the initial value of the solution
+    t0 - float: the initial value of time
+    delta_t - float: the step size
+    args - array: the arguments to be passed to the function f
+            or None if no arguments are to be passed
+
+    returns:
+    ---------------------------
+    y1 - array: the solution at the next step time step
+    t1 - float: the next time step
+
+    '''
 
     k1 = f(y0, t0, args)
     k2 = f(y0 + delta_t * k1, t0 + delta_t, args)

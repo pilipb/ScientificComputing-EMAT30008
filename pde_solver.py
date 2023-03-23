@@ -74,15 +74,14 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
     t = dt * np.arange(N_time)
 
     # print some info about time step
-    print('dt = %.6f' % dt)
-    print('%i time steps will be needed' % N_time)
+    print('\ndt = %.6f' % dt)
+    print('%i time steps will be needed\n' % N_time)
 
     # preallocate solution and boundary conditions
     u = np.zeros((N_time+1, N-1))
     u[0,:] = f(x_int)
 
-
-
+    # define the PDE 
     def PDE(t, u , D, A_DD, b_DD):
         return (D / dx**2) * (A_DD @ u + b_DD)
 
@@ -105,10 +104,14 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
     if method == 'explicit_euler':
 
         # loop over the steps
-        for n in range(0,N_time):
+        n = 0
+        while n < N_time:
 
             # update the solution
             u[n+1,:] = explicit_euler_calc(u, C, alpha, beta, N, n)[-1,:]
+
+            # update the time step
+            n += 1
 
         u[:,0] = alpha
         u[:,-1] = beta
@@ -126,14 +129,15 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
 
         return u.T, t
 
-    else:
-        # try the method with solve_to
+    else: # use the solve_to function
+        
+        # loop over the time steps
+        n = 0
+        while n < N_time:
 
-        # for time steps
-        for n in range(0, N_time - 1):
-
+            # attempt to solve the PDE using the specified method 
             try:
-                y, _ = solve_to(PDE, u0, t[n], t[n+1], dt, method , args = (D, A_DD, b_DD) )
+                y, _ = solve_to(PDE, u0, t[n], t[n+1], dt, method , args = (D, A_DD, b_DD))
             except:
                 ValueError('Solver name not recognized')
                 break
@@ -143,6 +147,9 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
 
             # update the solution
             u[n+1,1:-1] = y[-1,:]
+
+            # update the time step
+            n += 1
 
 
         u[:,0] = alpha
@@ -206,7 +213,7 @@ if __name__ == '__main__':
     f = lambda x: np.sin((np.pi*(x-a)/b-a))
     t_final = 1
 
-    u, t = pde_solver(f, a, b, alpha, beta, D, t_final, N = 50, C = 0.49, method = 'solve_ivp')
+    u, t = pde_solver(f, a, b, alpha, beta, D, t_final, N = 50, C = 0.49, method = 'RK4')
 
     # plot the solution
     plt.figure()
