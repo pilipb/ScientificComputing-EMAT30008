@@ -42,7 +42,7 @@ beta = 0.0
 f = lambda x: np.sin((np.pi*(x-a)/b-a))
 
 # creating grid
-N = 20
+N = 50
 x = np.linspace(a, b, N+1)
 x_int = x[1:-1]
 dx = (b-a)/N
@@ -91,20 +91,88 @@ for n in range(0,N_time):
     u_exact[n,:] = exact_solution(x_int, t[n])
 
 
+# re attach the boundary conditions and make arrays of alpha and beta for all time steps
+u = np.hstack((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))))
+u_exact = np.hstack((alpha*np.ones((N_time+1,1)), u_exact, beta*np.ones((N_time+1,1))))
+
 ### plot the solution
 
 # display the solution
 plt.figure()
-plt.title('Solution of the linear diffusion equation')
+plt.title('Linear diffusion equation: Explicit Euler method')
 
-# for n in range(0,N_time):
-plt.plot(x_int, u[0,:], label='numerical solution')
-
-# # plot the exact solution
-# for n in range(0,N_time):
-#     plt.plot(x_int, u_exact[n,:], label='exact solution')
+# plot 3 time steps
+for n in range(0,N_time,N_time//3):
+    plt.plot(x, u[n,:], label='numerical solution, t=%.2f' % t[n])
+    plt.plot(x, u_exact[n,:], label='exact solution, t=%.2f' % t[n], linestyle='--')
 
 plt.xlabel('x')
 plt.ylabel('u')
 plt.legend()
 plt.show()
+
+
+### now solve using solve_ivp
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+
+# define the problem
+a = 0.0
+b = 1.0
+alpha = 0.0
+beta = 0.0
+D = 0.5
+t_final = 1
+
+# grid for initial condition
+f = lambda x: np.sin((np.pi*(x-a)/b-a))
+
+# creating grid
+N = 40
+x = np.linspace(a, b, N+1)
+x_int = x[1:-1]
+dx = (b-a)/N
+
+def PDE(t, u , D, A_DD, b_DD):
+    return (D / dx**2) * (A_DD @ u + b_DD)
+
+# create the matrix A_DD
+A_DD = np.zeros((N-1, N-1))
+A_DD[0, 0] = -1
+A_DD[-1, -1] = -1
+for i in range(1, N-2):
+    A_DD[i, i-1] = 1
+    A_DD[i, i] = -2
+    A_DD[i, i+1] = 1
+
+# create the vector b_DD
+b_DD = np.zeros(N-1)
+b_DD[0] = alpha
+b_DD[-1] = beta
+
+sol = solve_ivp(PDE, (0, t_final), f(x_int), args=(D, A_DD, b_DD))
+
+# extract the solution
+u = sol.y
+t = sol.t
+
+# re attach the boundary conditions and make arrays of alpha and beta for all time steps
+u = np.hstack((alpha*np.ones((len(t),1)), u.T, beta*np.ones((len(t),1))))
+
+# display the solution
+plt.figure()
+plt.title('Linear diffusion equation: solve_ivp')
+
+# plot 3 time steps
+for n in range(0,len(t),len(t)//3):
+    plt.plot(x, u[n,:], label='numerical solution, t=%.2f' % t[n])
+    # plot the exact solution
+    plt.plot(x, exact_solution(x, t[n]), label='exact solution, t=%.2f' % t[n], linestyle='--')
+
+plt.xlabel('x')
+plt.ylabel('u')
+plt.legend()
+plt.show()
+    
