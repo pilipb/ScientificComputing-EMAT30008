@@ -80,8 +80,8 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
     # preallocate solution and boundary conditions
     u = np.zeros((N_time+1, N-1))
     u[0,:] = f(x_int)
-    u[:,0] = alpha
-    u[:,-1] = beta
+
+
 
     def PDE(t, u , D, A_DD, b_DD):
         return (D / dx**2) * (A_DD @ u + b_DD)
@@ -101,7 +101,6 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
     b_DD[-1] = beta
 
 
-    
     # identify the method
     if method == 'explicit_euler':
 
@@ -109,10 +108,10 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
         for n in range(0,N_time):
 
             # update the solution
-            u[n+1,1:-1] = explicit_euler_calc(u[n,:], C, alpha, beta, N, n)
+            u[n+1,:] = explicit_euler_calc(u, C, alpha, beta, N, n)[-1,:]
 
-        # re attach the boundary conditions
-        u = np.hstack((alpha*np.ones((len(t),1)), u, beta*np.ones((len(t),1))))
+        u[:,0] = alpha
+        u[:,-1] = beta
 
         return u, t
 
@@ -125,10 +124,7 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
         u = sol.y
         t = sol.t
 
-        # re attach the boundary conditions and make arrays of alpha and beta for all time steps
-        u = np.hstack((alpha*np.ones((len(t),1)), u.T, beta*np.ones((len(t),1))))
-
-        return u, t
+        return u.T, t
 
     else:
         # try the method with solve_to
@@ -148,8 +144,9 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
             # update the solution
             u[n+1,1:-1] = y[-1,:]
 
-        # re attach the boundary conditions
-        u = np.hstack((alpha*np.ones((len(t),1)), u, beta*np.ones((len(t),1))))
+
+        u[:,0] = alpha
+        u[:,-1] = beta
 
         return u, t
 
@@ -209,7 +206,7 @@ if __name__ == '__main__':
     f = lambda x: np.sin((np.pi*(x-a)/b-a))
     t_final = 1
 
-    u, t = pde_solver(f, a, b, alpha, beta, D, t_final, N = 50, C = 0.49, method = 'RK4')
+    u, t = pde_solver(f, a, b, alpha, beta, D, t_final, N = 50, C = 0.49, method = 'solve_ivp')
 
     # plot the solution
     plt.figure()
