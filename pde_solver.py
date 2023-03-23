@@ -179,6 +179,7 @@ plt.show()
 ### now solve using homemade solvers - RK4
 from solve_to import *
 from solvers import *
+from math import ceil
 
 # create a function for the pde
 def PDE(u, t , args):
@@ -202,14 +203,32 @@ b_DD[-1] = beta
 # create the initial condition
 u0 = f(x_int)
 
+# create the solution array
+u = np.zeros((N_time+1, N+1))
+u[0,:] = np.hstack((alpha, u0, beta))
+
+# create the time grid
+# CFL number
+C = 0.49
+
+# time discretization
+dt = C*dx**2/D
+t_final = 1
+N_time = ceil(t_final/dt)
+t = dt * np.arange(N_time)
+
+
 # for time steps
-for n in range(0,N_time):
+for n in range(0, N_time - 1):
 
-    # solve the pde
-    u[n+1,:] = solve_to(PDE, u0, t[n], t[n+1], dt, 'RK4', args = (D, A_DD, b_DD) )
+    y, _ = solve_to(PDE, u0, t[n], t[n+1], dt, 'RK4', args = (D, A_DD, b_DD) )
 
-# re attach the boundary conditions and make arrays of alpha and beta for all time steps
-u = np.hstack((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))))
+    # update the initial condition
+    u0 = y[-1,:]
+
+    # update the solution
+    u[n+1,1:-1] = y[-1,:]
+    
 
 # display the solution
 plt.figure()
@@ -225,4 +244,5 @@ plt.xlabel('x')
 plt.ylabel('u')
 plt.legend()
 plt.show()
+
 
