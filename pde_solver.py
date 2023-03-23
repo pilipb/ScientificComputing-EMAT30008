@@ -170,9 +170,6 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
         return u, t, x
 
 
-
-     
-
 def explicit_euler_calc(u, C, alpha, beta, N, n):
     '''
     Explicit Euler method, for an ODE.
