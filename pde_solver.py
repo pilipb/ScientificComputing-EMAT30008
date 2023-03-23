@@ -21,8 +21,8 @@ import matplotlib.pyplot as plt
 from scipy.optimize import root
 from numpy.linalg import solve
 
-from solve_to import *
-from solvers import *
+
+
 
 
 ### define the problem
@@ -176,3 +176,53 @@ plt.ylabel('u')
 plt.legend()
 plt.show()
     
+### now solve using homemade solvers - RK4
+from solve_to import *
+from solvers import *
+
+# create a function for the pde
+def PDE(u, t , args):
+    D, A_DD, b_DD = args
+    return D / dx**2 * (A_DD @ u + b_DD)
+    
+# create the matrix A_DD
+A_DD = np.zeros((N-1, N-1))
+A_DD[0, 0] = -1
+A_DD[-1, -1] = -1
+for i in range(1, N-2):
+    A_DD[i, i-1] = 1
+    A_DD[i, i] = -2
+    A_DD[i, i+1] = 1
+
+# create the vector b_DD
+b_DD = np.zeros(N-1)
+b_DD[0] = alpha
+b_DD[-1] = beta
+
+# create the initial condition
+u0 = f(x_int)
+
+# for time steps
+for n in range(0,N_time):
+
+    # solve the pde
+    u[n+1,:] = solve_to(PDE, u0, t[n], t[n+1], dt, 'RK4', args = (D, A_DD, b_DD) )
+
+# re attach the boundary conditions and make arrays of alpha and beta for all time steps
+u = np.hstack((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))))
+
+# display the solution
+plt.figure()
+plt.title('Linear diffusion equation: RK4')
+
+# plot 3 time steps
+for n in range(0,N_time,N_time//3):
+    plt.plot(x, u[n,:], label='numerical solution, t=%.2f' % t[n])
+    # plot the exact solution
+    plt.plot(x, exact_solution(x, t[n]), label='exact solution, t=%.2f' % t[n], linestyle='--')
+
+plt.xlabel('x')
+plt.ylabel('u')
+plt.legend()
+plt.show()
+
