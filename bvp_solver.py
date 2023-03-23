@@ -124,53 +124,7 @@ def bvp_solver(q, a, b,N , *args , D = 1.0, alpha = None,beta = None,gamma = Non
                 q_vec[i] = q(xi[i], u[i])
         return q_vec
     
-    # create a Thomas algorithm solver
-    def tdma(a, b):
-        '''
-        Thomas algorithm or Tridiagonal matrix algorithm (TDMA) for solving
-        A.x = b
-        where A is a tridiagonal matrix
-
-        
-        Parameters:
-        -----------------
-        a: array
-            the A matrix
-        b: array
-            the b vector
-
-        Returns:
-        -----------------
-        x: array
-            the solution of the linear system
-
-        '''
-        # define the size of the matrix
-        N = len(b)
-        c = np.zeros(N)
-        d = np.zeros(N)
-        x = np.zeros(N)
-
-        # solve the linear system
-        c[0] = a[0, 1]/a[0, 0]
-        d[0] = b[0]/a[0, 0]
-
-        # loop over the matrix
-        for i in range(1, N-1):
-            # solve the linear system
-            c[i] = a[i, i+1]/(a[i, i] - a[i, i-1]*c[i-1])
-            d[i] = (b[i] - a[i, i-1]*d[i-1])/(a[i, i] - a[i, i-1]*c[i-1])
-
-        # solve the last linear system
-        d[-1] = (b[-1] - a[-1, -2]*d[-2])/(a[-1, -1] - a[-1, -2]*c[-2])
-
-        # solve the linear system backwards
-        x[-1] = d[-1]
-        for i in range(N-2, -1, -1):
-            x[i] = d[i] - c[i]*x[i+1]
-
-        return x
-
+    
     # solve the linear system
     if method == 'scipy': # use SciPy root - use when q is a function of u
         sol = root(lambda u: D*A_mat.dot(u) +  b_vec + mak_q(q,u,args), u)
@@ -185,7 +139,53 @@ def bvp_solver(q, a, b,N , *args , D = 1.0, alpha = None,beta = None,gamma = Non
     return u, xi
 
 
+# create a Thomas algorithm solver
+def tdma(a, b):
+    '''
+    Thomas algorithm or Tridiagonal matrix algorithm (TDMA) for solving
+    A.x = b
+    where A is a tridiagonal matrix
+
     
+    Parameters:
+    -----------------
+    a: array
+        the A matrix
+    b: array
+        the b vector
+
+    Returns:
+    -----------------
+    x: array
+        the solution of the linear system
+
+    '''
+    # define the size of the matrix
+    N = len(b)
+    c = np.zeros(N)
+    d = np.zeros(N)
+    x = np.zeros(N)
+
+    # solve the linear system
+    c[0] = a[0, 1]/a[0, 0]
+    d[0] = b[0]/a[0, 0]
+
+    # loop over the matrix
+    for i in range(1, N-1):
+        # solve the linear system
+        c[i] = a[i, i+1]/(a[i, i] - a[i, i-1]*c[i-1])
+        d[i] = (b[i] - a[i, i-1]*d[i-1])/(a[i, i] - a[i, i-1]*c[i-1])
+
+    # solve the last linear system
+    d[-1] = (b[-1] - a[-1, -2]*d[-2])/(a[-1, -1] - a[-1, -2]*c[-2])
+
+    # solve the linear system backwards
+    x[-1] = d[-1]
+    for i in range(N-2, -1, -1):
+        x[i] = d[i] - c[i]*x[i+1]
+
+    return x
+
     
 
 
