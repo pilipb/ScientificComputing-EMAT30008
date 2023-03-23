@@ -103,6 +103,8 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
     # identify the method
     if method == 'explicit_euler':
 
+        print('Using the explicit Euler method...\n')
+
         # loop over the steps
         n = 0
         while n < N_time:
@@ -113,13 +115,15 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
             # update the time step
             n += 1
 
-        u[:,0] = alpha
-        u[:,-1] = beta
+        # concatenate the boundary conditions
+        u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
 
-        return u, t
+        return u, t, x
 
 
     elif method == 'solve_ivp':
+
+        print('Using the solve_ivp function...\n')
         
         sol = solve_ivp(PDE, (0, t_final), f(x_int), args=(D, A_DD, b_DD))
 
@@ -127,9 +131,16 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
         u = sol.y
         t = sol.t
 
-        return u.T, t
+        N_time = len(t)
+
+        # add on the u(a,t) and u(b,t) boundary conditions
+        u = np.concatenate((alpha*np.ones((1,N_time)), u, beta*np.ones((1,N_time))), axis = 0)
+
+        return u.T, t, x
 
     else: # use the solve_to function
+
+        print('Using the solve_to function...\n')
         
         # loop over the time steps
         n = 0
@@ -138,6 +149,7 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
             # attempt to solve the PDE using the specified method 
             try:
                 y, _ = solve_to(PDE, u0, t[n], t[n+1], dt, method , args = (D, A_DD, b_DD))
+        
             except:
                 ValueError('Solver name not recognized')
                 break
@@ -152,10 +164,10 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
             n += 1
 
 
-        u[:,0] = alpha
-        u[:,-1] = beta
+        # concatenate the boundary conditions
+        u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
 
-        return u, t
+        return u, t, x
 
 
 
@@ -213,254 +225,30 @@ if __name__ == '__main__':
     f = lambda x: np.sin((np.pi*(x-a)/b-a))
     t_final = 1
 
-    u, t = pde_solver(f, a, b, alpha, beta, D, t_final, N = 50, C = 0.49, method = 'RK4')
 
-    # plot the solution
-    plt.figure()
-    plt.plot(t, u[:,:])
-    plt.xlabel('t')
-    plt.ylabel('u')
-    plt.show()
+    # solve the problem for RK4, explicit_euler, and solve_ivp
+    for method in ['RK4', 'explicit_euler', 'solve_ivp']:
 
+        # solve the problem
+        u, t, x = pde_solver(f, a, b, alpha, beta, D, t_final, N = 10, C = 0.49, method = method)
 
+        # plot the solution at 3 different times
+        for n in np.linspace(0, len(t)-1, 5, dtype = int):
+            plt.plot(x, u[n,:], label = '%s at t = %.2f' % (method, t[n]))
 
+        plt.legend()
+        plt.xlabel('x')
+        plt.ylabel('u(x,t)')
+        plt.show()
 
-
-
-
-
-'''
-
-
-
-
-### define the problem
-
-# diffusion coefficient
-D = 0.5
-
-# domain
-a = 0.0
-b = 1.0
-
-# boundary conditions
-alpha = 0.0
-beta = 0.0
-
-# grid for initial condition
-f = lambda x: np.sin((np.pi*(x-a)/b-a))
-
-# creating grid
-N = 50
-x = np.linspace(a, b, N+1)
-x_int = x[1:-1]
-dx = (b-a)/N
-
-# CFL number
-C = 0.49
-
-# time discretization
-dt = C*dx**2/D
-t_final = 1
-N_time = int(t_final/dt)
-t = dt * np.arange(N_time)
-
-# print some info about time step
-print('dt = %.3f' % dt)
-print('%i time steps will be needed' % N_time)
-
-### start time stepping
-
-# preallocate solution
-u = np.zeros((N_time+1, N-1))
-u[0,:] = f(x_int)
-
-# re make the x grid 
-x = np.linspace(a, b, N+1)
-
-def explicit_euler_calc(u, C, alpha, beta, N):
-    # loop over the grid
-    for i in range(0, N-2):
-        if i==0:
-            u[n+1,i] = u[n,i] + C*(u[n,i+1]-2*u[n,i]+alpha)
-        elif i < 0 and i < N-2:
-            u[n+1,i] = u[n,i] + C*(u[n,i+1]-2*u[n,i]+u[n,i-1])
-        else:
-            u[n+1,N-2] = u[n,N-2] + C*(beta - 2*u[n,N-2]+u[n,N-3])
-
-    return u
-
-# loop over the steps
-for n in range(0,N_time):
-
-    u_calc = explicit_euler_calc(u, C, alpha, beta, N)
-    
-    u[n+1,:] =  u_calc[n+1,:]
-
-
-
-
-
-
-### calculate the exact solution
-def exact_solution(x, t):
-    return np.sin(np.pi*(x-a)/(b-a)) * np.exp(-np.pi**2*D*t/(b-a)**2)
-
-u_exact = np.zeros((N_time+1, N-1))
-for n in range(0,N_time):
-    u_exact[n,:] = exact_solution(x_int, t[n])
-
-
-# re attach the boundary conditions and make arrays of alpha and beta for all time steps
-u = np.hstack((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))))
-u_exact = np.hstack((alpha*np.ones((N_time+1,1)), u_exact, beta*np.ones((N_time+1,1))))
-
-### plot the solution
-
-# display the solution
-plt.figure()
-plt.title('Linear diffusion equation: Explicit Euler method')
-
-# plot 3 time steps
-for n in range(0,N_time,N_time//3):
-    plt.plot(x, u[n,:], label='numerical solution, t=%.2f' % t[n])
-    plt.plot(x, u_exact[n,:], label='exact solution, t=%.2f' % t[n], linestyle='--')
-
-plt.xlabel('x')
-plt.ylabel('u')
-plt.legend()
-plt.show()
-
-
-### now solve using solve_ivp
-
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.integrate import solve_ivp
-
-# define the problem
-a = 0.0
-b = 1.0
-alpha = 0.0
-beta = 0.0
-D = 0.5
-t_final = 1
-
-# grid for initial condition
-f = lambda x: np.sin((np.pi*(x-a)/b-a))
-
-# creating grid
-N = 40
-x = np.linspace(a, b, N+1)
-x_int = x[1:-1]
-dx = (b-a)/N
-
-def PDE(t, u , D, A_DD, b_DD):
-    return (D / dx**2) * (A_DD @ u + b_DD)
-
-# create the matrix A_DD
-A_DD = np.zeros((N-1, N-1))
-A_DD[0, 0] = -1
-A_DD[-1, -1] = -1
-for i in range(1, N-2):
-    A_DD[i, i-1] = 1
-    A_DD[i, i] = -2
-    A_DD[i, i+1] = 1
-
-# create the vector b_DD
-b_DD = np.zeros(N-1)
-b_DD[0] = alpha
-b_DD[-1] = beta
-
-sol = solve_ivp(PDE, (0, t_final), f(x_int), args=(D, A_DD, b_DD))
-
-# extract the solution
-u = sol.y
-t = sol.t
-
-# re attach the boundary conditions and make arrays of alpha and beta for all time steps
-u = np.hstack((alpha*np.ones((len(t),1)), u.T, beta*np.ones((len(t),1))))
-
-# display the solution
-plt.figure()
-plt.title('Linear diffusion equation: solve_ivp')
-
-# plot 3 time steps
-for n in range(0,len(t),len(t)//3):
-    plt.plot(x, u[n,:], label='numerical solution, t=%.2f' % t[n])
-    # plot the exact solution
-    plt.plot(x, exact_solution(x, t[n]), label='exact solution, t=%.2f' % t[n], linestyle='--')
-
-plt.xlabel('x')
-plt.ylabel('u')
-plt.legend()
-plt.show()
-    
-### now solve using homemade solvers - RK4
-
-# create a function for the pde
-def PDE(u, t , args):
-    D, A_DD, b_DD = args
-    return D / dx**2 * (A_DD @ u + b_DD)
-    
-# create the matrix A_DD
-A_DD = np.zeros((N-1, N-1))
-A_DD[0, 0] = -1
-A_DD[-1, -1] = -1
-for i in range(1, N-2):
-    A_DD[i, i-1] = 1
-    A_DD[i, i] = -2
-    A_DD[i, i+1] = 1
-
-# create the vector b_DD
-b_DD = np.zeros(N-1)
-b_DD[0] = alpha
-b_DD[-1] = beta
-
-# create the initial condition
-u0 = f(x_int)
-
-# create the solution array
-u = np.zeros((N_time+1, N+1))
-u[0,:] = np.hstack((alpha, u0, beta))
-
-# create the time grid
-# CFL number
-C = 0.49
-
-# time discretization
-dt = C*dx**2/D
-t_final = 1
-N_time = ceil(t_final/dt)
-t = dt * np.arange(N_time)
-
-
-# for time steps
-for n in range(0, N_time - 1):
-
-    y, _ = solve_to(PDE, u0, t[n], t[n+1], dt, 'RK4', args = (D, A_DD, b_DD) )
-
-    # update the initial condition
-    u0 = y[-1,:]
-
-    # update the solution
-    u[n+1,1:-1] = y[-1,:]
     
 
-# display the solution
-plt.figure()
-plt.title('Linear diffusion equation: RK4')
 
-# plot 3 time steps
-for n in range(0,N_time,N_time//3):
-    plt.plot(x, u[n,:], label='numerical solution, t=%.2f' % t[n])
-    # plot the exact solution
-    plt.plot(x, exact_solution(x, t[n]), label='exact solution, t=%.2f' % t[n], linestyle='--')
-
-plt.xlabel('x')
-plt.ylabel('u')
-plt.legend()
-plt.show()
+    
+    
 
 
-'''
+
+
+
+
