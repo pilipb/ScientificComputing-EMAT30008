@@ -36,6 +36,8 @@ def solve_to(f, y0, t0, t1, delta_t, method, args = None):
     # run error check
     error_check(f, y0, t0, delta_t,t1=t1, method = method)
 
+    print('solve to...')
+
     # initialize the solution
     Y = [y0]
     t = [t0]

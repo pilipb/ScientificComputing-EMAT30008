@@ -19,7 +19,6 @@ u(x,t) = sin((pi*(x-a)/b-a)) * exp(-pi**2*D*t/(b-a)**2)
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
-from solve_to import *
 from solvers import *
 from math import ceil
 
@@ -78,7 +77,8 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
     u[0,:] = f(x_int)
 
     # define the PDE - for a constant time therefore its a 1st order ODE
-    def PDE(t, u , D, A_DD, b_DD):
+    def PDE(t, u , args):
+        D, A_DD, b_DD = args
         return (D / dx**2) * (A_DD @ u + b_DD)
 
     # create the matrix A_DD
@@ -113,7 +113,7 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
 
             for i in range(1, N):
 
-                u[n+1,i-1] = u[n,i-1] + dt * PDE(t[n], u[n,:], D, A_DD, b_DD)[i-1]
+                u[n+1,i-1] = u[n,i-1] + dt * PDE(t[n], u[n,:], args=(D, A_DD, b_DD))[i-1]
 
         # concatenate the boundary conditions   
         u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
@@ -140,7 +140,15 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
 
     else: # use the solve_to function
 
-        print('Using the solve_to function...\n')
+        # find method
+        methods = {'Euler': euler_step, 'RK4': rk4_step, 'Heun': heun_step}
+
+        # check if method is valid
+        if method not in methods:
+            raise ValueError('Invalid method, please enter a valid method: Euler, RK4, Heun or define your own')
+
+        # set method
+        method = methods[method]
 
         # print some info about time step
         print('\ndt = %.6f' % dt)
@@ -149,16 +157,11 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
         # loop over the time steps
         for n in range(0, N_time):
 
-            # update the initial condition
-            u0 = u[n,:]
-
             # loop over the steps using solve_to
             for i in range(1, N):
 
                 # update the solution
-                u[n+1,i-1] = solve_to(PDE, u0, t[n], t[n+1], dt, method,  args=(D, A_DD, b_DD))[i-1]
-
-
+                u[n+1,:] = method(PDE, u[n,:], t[n], dt,args=( D, A_DD, b_DD))[0]
 
         # concatenate the boundary conditions
         u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)

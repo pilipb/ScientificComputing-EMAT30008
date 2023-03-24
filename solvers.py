@@ -36,8 +36,8 @@ def rk4_step(f, y0, t0, delta_t, args):
     parameters:
     ---------------------------
     f - function: the function to be integrated (with inputs (Y,t, args)) in first order form of n dimensions
+    t0 - float: the initial value of time    
     y0 - array: the initial value of the solution
-    t0 - float: the initial value of time
     delta_t - float: the step size
     args - array: the arguments to be passed to the function f
             or None if no arguments are to be passed
@@ -50,14 +50,14 @@ def rk4_step(f, y0, t0, delta_t, args):
     '''
 
 
-    k1 = delta_t * f(y0, t0, args)
-    k2 = delta_t * f(y0 + delta_t/2 * k1, t0 + delta_t/2, args)
-    k3 = delta_t * f(y0 + delta_t/2 * k2, t0 + delta_t/2, args)
-    k4 = delta_t * f(y0 + delta_t * k3, t0 + delta_t,   args)
-    y1 = y0 + (k1)/6 + 2*(k2)/6 + 2*(k3)/6 + (k4)/6
+    k1 = delta_t * f( t0, y0, args)
+    k2 = delta_t * f( t0 + delta_t/2, y0 + k1/2, args)  
+    k3 = delta_t * f( t0 + delta_t/2, y0 + k2/2, args)
+    k4 = delta_t * f( t0 + delta_t, y0 + k3, args)
+    y1 = y0 + (k1 + 2*k2 + 2*k3 + k4)/6
     t1 = t0 + delta_t
 
-    return y1, t1
+    return np.array(y1), t1
 
 
 # Heuns method - generalised to any number of dimensions
