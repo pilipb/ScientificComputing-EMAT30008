@@ -6,26 +6,25 @@ import scipy.optimize as scipy
 import math
 
 
-'''
-Implementing a numerical shooting method to solve an ODE to find a periodic solution
-This method will solve the ODE using root finding method to find the limit cycle, using scipy.optimize.fsolve to
-find the initial conditions and period that satisfy the boundary conditions.
+def shooting(f, Y0, T, args = None):
 
-parameters:
-----------------------------
-f - function: the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
-y0 - array: the initial value of the solution
-T - float: an initial guess for the period of the solution
+    '''
+    Implementing a numerical shooting method to solve an ODE to find a periodic solution
+    This method will solve the ODE using root finding method to find the limit cycle, using scipy.optimize.fsolve to
+    find the initial conditions and period that satisfy the boundary conditions.
 
-returns:
-----------------------------
-Y - array: the initial conditions that cause the solution to be periodic
-T - float: the period of the solution
+    parameters:
+    ----------------------------
+    f - function: the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
+    y0 - array: the initial value of the solution
+    T - float: an initial guess for the period of the solution
+    args - array: the arguments for the function f
 
-'''
+    returns:
+    ----------------------------
+    sol - array: the initial conditions that cause the solution to be periodic: sol = [x0, y0, ... , T]
 
-
-def shooting(f, Y0, T):
+    '''
 
     # unpack the initial conditions and period guess
     T_guess = T
@@ -33,7 +32,7 @@ def shooting(f, Y0, T):
     # y0 = Y0
 
     # test the initial conditions guess
-    Y , _ = solve_to(f, Y0, 0, 300, 0.01, 'RK4')
+    Y , _ = solve_to(f, Y0, 0, 300, 0.01, 'RK4', args = args)
 
     # derive better starting guess from the solution
     # [x0,y0] = [np.median(Y[:,0]), np.median(Y[:,1])]
@@ -49,18 +48,19 @@ def shooting(f, Y0, T):
     '''
 
     # define the find dx/dt function
-    def dxdt( Y, t, f=f):
-        return f(Y, t)[0]
+    def dxdt(t, Y, f=f):
+        return f(t, Y, args=args)[0]
 
 
     # define the function that will be solved for the initial conditions and period
     def fun(initial_vals):
-        print(initial_vals)
+
         # unpack the initial conditions and period guess
         T = initial_vals[-1]
         y0 = initial_vals[:-1]
 
-        Y , _ = solve_to(f, y0, 0, T, 0.01, 'RK4')
+        Y , _ = solve_to(f, y0, 0, T, 0.01, 'RK4', args = args)
+        print('check: ', Y[-1])
 
         num_dim = len(y0)
         row = np.zeros(num_dim)
@@ -69,7 +69,7 @@ def shooting(f, Y0, T):
         for i in range(num_dim):
             row[i] = Y[-1,i] - y0[i]
   
-        row = np.append(row,dxdt(Y[-1],T))
+        row = np.append(row, dxdt(Y[-1],T))
 
         output = np.array(row)
         return output
@@ -79,18 +79,7 @@ def shooting(f, Y0, T):
 
     sol = scipy.fsolve(fun, y0)
 
-    '''
-    Currently, the initial conditions do not always allow fsolve to find the correct solution. This is because the initial conditions
-    are not always in the correct range. To fix this, we can use a root finding method to find the initial conditions that satisfy
-    the boundary conditions. 
-
-    The starting guess must fall on the periodic phase space trajectory. 
-    
-    '''
-
-    
-
-    # return the period and initial conditions that cause the limit cycle
+    # return the period and initial conditions that cause the limit cycle: sol = [x0, y0, ... , T]
     return sol
 
 
@@ -108,9 +97,9 @@ if __name__ == '__main__':
     d = 0.1
     b = 0.1
 
-    def ode(Y, t, args = (a, b, d)):
+    def ode(t, Y, args):
+
         a, b, d = args
-        # print('Y = ', Y)
         x, y = Y
         return np.array([x*(1-x) - (a*x*y)/(d+x) , b*y*(1- (y/x))])
 
@@ -124,7 +113,7 @@ if __name__ == '__main__':
     Y0 = [2,3]
     
     # solve the ode using the shooting method
-    sol = shooting(ode, Y0,20)
+    sol = shooting(ode, Y0,20, args=[a,b,d])
 
 #    extract the period and initial conditions
     T = sol[-1]
@@ -134,7 +123,7 @@ if __name__ == '__main__':
     print('Y0 = ', Y0, '\n')
 
     # solve for one period of the solution
-    Y,t = solve_to(ode, Y0, 0, T, 0.01, 'RK4')
+    Y,t = solve_to(ode, Y0, 0, T, 0.01, 'RK4', args=[a,b,d])
 
     # check that the solution is one period
     if np.allclose(Y[0], Y[-1], atol=1e-5):
