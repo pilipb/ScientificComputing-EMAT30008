@@ -169,42 +169,11 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
         return u, t, x
 
 
-def explicit_euler_calc(u, C, alpha, beta, N, n):
-    '''
-    Explicit Euler method, for an ODE, updates the solution at the next time step.
 
-    Parameters
-    ----------
-    u : array
-        The solution at the current time step.
-    C : float
-        The time step.
-    alpha : float
-        The boundary condition at the left end of the domain.
-    beta : float
-        The boundary condition at the right end of the domain.
-    N : int
-        The number of grid points.
-    n : int
-        The current time step.
 
-    Returns
-    ----------
-    u : array
-        The solution at the next time step.
 
-    '''
-    
-    # loop over the grid
-    for i in range(0, N-1):
-        if i==0:
-            u[n+1,i] = u[n,i] + C*(u[n,i+1] - 2*u[n,i] + alpha)
-        elif i < 0 and i < N-2:
-            u[n+1,i] = u[n,i] + C*(u[n,i+1] - 2 *u[n,i] + u[n,i-1])
-        else:
-            u[n+1,N-2] = u[n,N-2] + C*(beta - 2*u[n,N-2]+u[n,N-3])
 
-    return u[n+1,:]
+
 
 
 if __name__ == '__main__':
