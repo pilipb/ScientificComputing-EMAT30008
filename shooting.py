@@ -48,7 +48,7 @@ def shooting(f, Y0, T, args = None):
     '''
 
     # define the find dx/dt function
-    def dxdt(t, Y, f=f):
+    def dxdt(Y, t, f=f):
         return f(t, Y, args=args)[0]
 
 
@@ -60,7 +60,6 @@ def shooting(f, Y0, T, args = None):
         y0 = initial_vals[:-1]
 
         Y , _ = solve_to(f, y0, 0, T, 0.01, 'RK4', args = args)
-        print('check: ', Y[-1])
 
         num_dim = len(y0)
         row = np.zeros(num_dim)
@@ -100,6 +99,9 @@ if __name__ == '__main__':
     def ode(t, Y, args):
 
         a, b, d = args
+
+        Y = np.array(Y)
+
         x, y = Y
         return np.array([x*(1-x) - (a*x*y)/(d+x) , b*y*(1- (y/x))])
 
@@ -113,7 +115,7 @@ if __name__ == '__main__':
     Y0 = [2,3]
     
     # solve the ode using the shooting method
-    sol = shooting(ode, Y0,20, args=[a,b,d])
+    sol = shooting(ode, Y0, 20, args=[a,b,d])
 
 #    extract the period and initial conditions
     T = sol[-1]

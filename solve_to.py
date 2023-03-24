@@ -34,11 +34,11 @@ def solve_to(f, y0, t0, t1, delta_t, method, args = None):
     '''
 
     # run error check
-    error_check(f, y0, t0, delta_t,t1=t1, method = method, args = args)
+    error_check(f, y0, t0, delta_t,t1=t1, method = method, args=args)
 
     # initialize the solution
-    Y = np.array([y0])
-    t = np.array([t0])
+    Y = [y0]
+    t = [t0]
 
     # find method
     methods = {'Euler': euler_step, 'RK4': rk4_step, 'Heun': heun_step}
@@ -55,18 +55,16 @@ def solve_to(f, y0, t0, t1, delta_t, method, args = None):
 
         # take a step
         y1, t0 = method(f, Y[-1], t[-1], delta_t, args = args)
-        print('time: ', t0)
 
         # append the solution
-        Y = np.append(Y, y1)
-        print('Y: ', Y)
-        t = np.append(t, t0)
+        Y.append(y1)
+        t.append(t0)
     
     # for the last step, we need to take a step of t1 - t[-1]
     last_step = t1 - t[-1]
     y1, t0 = method(f, Y[-1], t[-1], last_step, args = args)
-    np.append(Y, y1)
-    np.append(t, t0)      
+    Y.append(y1)
+    t.append(t0)
 
-    return Y, t
+    return np.array(Y), np.array(t)
 
