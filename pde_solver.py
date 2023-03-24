@@ -80,6 +80,13 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
     def PDE(t, u , args):
         D, A_DD, b_DD = args
         return (D / dx**2) * (A_DD @ u + b_DD)
+    
+    '''
+    annoyingly the solve_ivp function requires the PDE to have args as separate arguments,
+    this is not the case for all my own methods so I have to define the PDE again
+    '''
+    def PDE_ivp(t, u, D, A_DD, b_DD):
+        return (D / dx**2) * (A_DD @ u + b_DD)
 
     # create the matrix A_DD
     A_DD = np.zeros((N-1, N-1))
@@ -125,7 +132,7 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
 
         print('Using the solve_ivp function...\n')
         
-        sol = solve_ivp(PDE, (0, t_final), f(x_int), args=(D, A_DD, b_DD))
+        sol = solve_ivp(PDE_ivp, (0, t_final), f(x_int), args=(D, A_DD, b_DD))
 
         # extract the solution
         u = sol.y
@@ -145,7 +152,7 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
 
         # check if method is valid
         if method not in methods:
-            raise ValueError('Invalid method, please enter a valid method: Euler, RK4, Heun or define your own')
+            raise ValueError('Invalid method, please enter a valid method: Euler, RK4, Heun or define your own in solvers.py')
 
         # set method
         method = methods[method]
@@ -157,11 +164,8 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
         # loop over the time steps
         for n in range(0, N_time):
 
-            # loop over the steps using solve_to
-            for i in range(1, N):
-
-                # update the solution
-                u[n+1,:] = method(PDE, u[n,:], t[n], dt,args=( D, A_DD, b_DD))[0]
+            # update the solution
+            u[n+1,:] = method(PDE, u[n,:], t[n], dt,args=( D, A_DD, b_DD))[0]
 
         # concatenate the boundary conditions
         u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
