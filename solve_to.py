@@ -36,8 +36,6 @@ def solve_to(f, y0, t0, t1, delta_t, method, args = None):
     # run error check
     error_check(f, y0, t0, delta_t,t1=t1, method = method)
 
-    print('solve to...')
-
     # initialize the solution
     Y = [y0]
     t = [t0]
@@ -61,15 +59,12 @@ def solve_to(f, y0, t0, t1, delta_t, method, args = None):
         # append the solution
         Y.append(y1)
         t.append(t0)
-        # print(t)
     
     # for the last step, we need to take a step of t1 - t[-1]
     last_step = t1 - t[-1]
     y1, t0 = method(f, Y[-1], t[-1], last_step, args = args)
     Y.append(y1)
     t.append(t0)
-
-
 
     return np.array(Y), np.array(t)
 
