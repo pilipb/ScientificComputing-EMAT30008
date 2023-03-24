@@ -74,10 +74,6 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.001, method = 'RK4'):
     N_time = ceil(t_final/dt)
     t = dt * np.arange(N_time)
 
-    # print some info about time step
-    print('\ndt = %.6f' % dt)
-    print('%i time steps will be needed\n' % N_time)
-
     # preallocate solution and boundary conditions
     u = np.zeros((N_time+1, N-1))
     u[0,:] = f(x_int)
@@ -98,8 +94,6 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.001, method = 'RK4'):
     A_DD[-1, -2] = 1
     A_DD[-1, -1] = -2
 
-    print(A_DD)
-
     # create the vector b_DD
     b_DD = np.zeros(N-1)
     b_DD[0] = alpha
@@ -111,15 +105,16 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.001, method = 'RK4'):
 
         print('Using the explicit Euler method...\n')
 
+        # print some info about time step
+        print('\ndt = %.6f' % dt)
+        print('%i time steps will be needed\n' % N_time)
+
         # loop over the steps
-        n = 0
-        while n < N_time:
+        for n in range(0, N_time):
 
             # update the solution
-            u[n+1,:] = explicit_euler_calc(u, C, alpha, beta, N, n)[-1,:]
+            explicit_euler_calc(u, C, alpha, beta, N, n)
 
-            # update the time step
-            n += 1
 
         # concatenate the boundary conditions
         u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
@@ -139,7 +134,7 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.001, method = 'RK4'):
 
         N_time = len(t)
 
-        # add on the u(a,t) and u(b,t) boundary conditions
+        # add on the u(a,t) and u(b,t) boundary conditions - for plotting
         u = np.concatenate((alpha*np.ones((1,N_time)), u, beta*np.ones((1,N_time))), axis = 0)
 
         return u.T, t, x
@@ -147,6 +142,10 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.001, method = 'RK4'):
     else: # use the solve_to function
 
         print('Using the solve_to function...\n')
+
+        # print some info about time step
+        print('\ndt = %.6f' % dt)
+        print('%i time steps will be needed\n' % N_time)
         
         # loop over the time steps
         n = 0
@@ -202,13 +201,12 @@ def explicit_euler_calc(u, C, alpha, beta, N, n):
 
     '''
     
-
     # loop over the grid
-    for i in range(0, N-2):
+    for i in range(0, N-1):
         if i==0:
-            u[n+1,i] = u[n,i] + C*(u[n,i+1]-2*u[n,i]+alpha)
+            u[n+1,i] = u[n,i] + C*(u[n,i+1] - 2*u[n,i] + alpha)
         elif i < 0 and i < N-2:
-            u[n+1,i] = u[n,i] + C*(u[n,i+1]-2*u[n,i]+u[n,i-1])
+            u[n+1,i] = u[n,i] + C*(u[n,i+1] - 2 *u[n,i] + u[n,i-1])
         else:
             u[n+1,N-2] = u[n,N-2] + C*(beta - 2*u[n,N-2]+u[n,N-3])
 
