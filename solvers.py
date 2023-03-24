@@ -21,6 +21,8 @@ def euler_step(f, y0, t0, delta_t, args):
     t1 - float: the next time step
 
     '''
+    # run error check
+    error_check(f, y0, t0, delta_t, args = args)
 
     y1 = y0 + delta_t * f(y0, t0, args)
     t1 = t0 + delta_t
@@ -48,6 +50,8 @@ def rk4_step(f, y0, t0, delta_t, args):
     t1 - float: the next time step
 
     '''
+    # run error check
+    error_check(f, y0, t0, delta_t, args = args)
 
 
     k1 = delta_t * f( t0, y0, args)
@@ -82,6 +86,8 @@ def heun_step(f, y0, t0, delta_t, args):
     t1 - float: the next time step
 
     '''
+    # run error check
+    error_check(f, y0, t0, delta_t, args = args)
 
     k1 = f(y0, t0, args)
     k2 = f(y0 + delta_t * k1, t0 + delta_t, args)
@@ -90,7 +96,7 @@ def heun_step(f, y0, t0, delta_t, args):
     return y1, t1
 
 # error checking function for the steps
-def error_check(f, y0, t0, delta_t, t1=None, method=None):
+def error_check(f, y0, t0, delta_t, t1=None, method=None, args=None):
     if not callable(f):
         raise ValueError('f must be a function')
     if not isinstance(y0, (np.ndarray, list)):
@@ -107,5 +113,9 @@ def error_check(f, y0, t0, delta_t, t1=None, method=None):
     if method is not None:
         if not isinstance(method, str):
             raise ValueError('method must be a string')
+    if args is not None:
+        if not isinstance(args, (np.ndarray, list)):
+            raise ValueError('args must be a numpy array or list')
+        
         
 
