@@ -23,7 +23,7 @@ from solve_to import *
 from solvers import *
 from math import ceil
 
-def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.001, method = 'RK4'):
+def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
 
     '''
     A PDE solver that implements different integration methods to solve the PDE
@@ -64,7 +64,6 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.001, method = 'RK4'):
     '''
 
     # create the grid
-    N = 40
     x = np.linspace(a, b, N+1)
     x_int = x[1:-1] # interior points
     dx = (b-a)/N
@@ -112,11 +111,11 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.001, method = 'RK4'):
         # loop over the steps
         for n in range(0, N_time):
 
-            # update the solution
-            explicit_euler_calc(u, C, alpha, beta, N, n)
+            for i in range(1, N):
 
+                u[n+1,i-1] = u[n,i-1] + dt * PDE(t[n], u[n,:], D, A_DD, b_DD)[i-1]
 
-        # concatenate the boundary conditions
+        # concatenate the boundary conditions   
         u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
 
         return u, t, x
@@ -148,25 +147,17 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.001, method = 'RK4'):
         print('%i time steps will be needed\n' % N_time)
         
         # loop over the time steps
-        n = 0
-        while n < N_time:
-
-            # attempt to solve the PDE using the specified method 
-            try:
-                y, _ = solve_to(PDE, u0, t[n], t[n+1], dt, method , args = (D, A_DD, b_DD))
-        
-            except:
-                ValueError('Solver name not recognized')
-                break
+        for n in range(0, N_time):
 
             # update the initial condition
-            u0 = y[-1,:]
+            u0 = u[n,:]
 
-            # update the solution
-            u[n+1,1:-1] = y[-1,:]
+            # loop over the steps using solve_to
+            for i in range(1, N):
 
-            # update the time step
-            n += 1
+                # update the solution
+                u[n+1,i-1] = solve_to(PDE, u0, t[n], t[n+1], dt, method,  args=(D, A_DD, b_DD))[i-1]
+
 
 
         # concatenate the boundary conditions
@@ -177,7 +168,7 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.001, method = 'RK4'):
 
 def explicit_euler_calc(u, C, alpha, beta, N, n):
     '''
-    Explicit Euler method, for an ODE.
+    Explicit Euler method, for an ODE, updates the solution at the next time step.
 
     Parameters
     ----------
@@ -210,7 +201,7 @@ def explicit_euler_calc(u, C, alpha, beta, N, n):
         else:
             u[n+1,N-2] = u[n,N-2] + C*(beta - 2*u[n,N-2]+u[n,N-3])
 
-    return u
+    return u[n+1,:]
 
 
 if __name__ == '__main__':
@@ -224,7 +215,10 @@ if __name__ == '__main__':
     alpha = 0.0
     beta = 0.0
     f = lambda x: np.sin((np.pi*(x-a)/b-a))
-    t_final = 1
+    t_final = 0.5
+
+    # define the exact solution
+    u_exact = lambda x, t: np.sin(np.pi*(x-a)/b-a)*np.exp(-np.pi**2*D*t/b**2)
 
 
     # solve the problem for RK4, explicit_euler, and solve_ivp
@@ -234,8 +228,13 @@ if __name__ == '__main__':
         u, t, x = pde_solver(f, a, b, alpha, beta, D, t_final, N = 10, C = 0.49, method = method)
 
         # plot the solution at 3 different times
-        for n in np.linspace(0, len(t)-1, 5, dtype = int):
+        for n in np.linspace(0, len(t)-1, 3, dtype = int):
             plt.plot(x, u[n,:], label = '%s at t = %.2f' % (method, t[n]))
+
+            # plot the exact solution at the same times
+            plt.plot(x, u_exact(x, t[n]), '--', label = 'exact at t = %.2f' % t[n])
+
+
 
         plt.legend()
         plt.xlabel('x')
