@@ -23,7 +23,7 @@ from solve_to import *
 from solvers import *
 from math import ceil
 
-def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
+def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.001, method = 'RK4'):
 
     '''
     A PDE solver that implements different integration methods to solve the PDE
@@ -64,6 +64,7 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
     '''
 
     # create the grid
+    N = 40
     x = np.linspace(a, b, N+1)
     x_int = x[1:-1] # interior points
     dx = (b-a)/N
@@ -81,18 +82,23 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
     u = np.zeros((N_time+1, N-1))
     u[0,:] = f(x_int)
 
-    # define the PDE 
+    # define the PDE - for a constant time therefore its a 1st order ODE
     def PDE(t, u , D, A_DD, b_DD):
         return (D / dx**2) * (A_DD @ u + b_DD)
 
     # create the matrix A_DD
     A_DD = np.zeros((N-1, N-1))
-    A_DD[0, 0] = -1
-    A_DD[-1, -1] = -1
     for i in range(1, N-2):
         A_DD[i, i-1] = 1
         A_DD[i, i] = -2
         A_DD[i, i+1] = 1
+
+    A_DD[0, 1] = 1
+    A_DD[0, 0] = -2
+    A_DD[-1, -2] = 1
+    A_DD[-1, -1] = -2
+
+    print(A_DD)
 
     # create the vector b_DD
     b_DD = np.zeros(N-1)
