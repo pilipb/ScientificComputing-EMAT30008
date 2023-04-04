@@ -114,7 +114,7 @@ def error_check(f, y0, t0, delta_t, t1=None, method=None, args=None):
         if not isinstance(method, str):
             raise ValueError('method must be a string')
     if args is not None:
-        if not isinstance(args, (np.ndarray, list)):
+        if not isinstance(args, (np.ndarray, list, tuple)):
             raise ValueError('args must be a numpy array or list')
         
         
