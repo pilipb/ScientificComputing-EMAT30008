@@ -29,7 +29,7 @@ def pde_solver(f, a, b, alpha, beta, D, t_final, N, C= 0.49, method = 'RK4'):
 
     PDE in the form:
 
-    u_t = D*u_xx
+    u_t = D*u_xx + q(x,t,u)
 
     u(a,t) = alpha
     u(b,t) = beta
@@ -216,6 +216,21 @@ if __name__ == '__main__':
         plt.xlabel('x')
         plt.ylabel('u(x,t)')
         plt.show()
+
+
+    ### solve the dynamic Bratu problem
+
+    # define the problem
+    D = 1.0
+    myu = [2,4]
+
+    # define the function f(x) = exp(myu*u)
+    def f(x, u, args):
+        myu = args[0]
+        return np.exp(myu*u)
+    
+
+
 
     
 
