@@ -162,7 +162,7 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 
 
             for i in range(1, N):
 
-                u[n+1,i-1] = u[n,i-1] + dt * PDE(t[n], u[n,:], args=(D, A_, b_, q))[i-1]
+                u[n+1,i-1] = u[n,i-1] + dt * PDE(t[n], u[n,:], (D, A_, b_, q))[i-1]
 
         # concatenate the boundary conditions   
         u = np.concatenate((a*np.ones((N_time+1,1)), u, b*np.ones((N_time+1,1))), axis = 1)
@@ -207,7 +207,7 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 
         for n in range(0, N_time):
 
             # update the solution
-            u[n+1,:] = method(PDE, u[n,:], t[n], dt, args=( D, A_, b_, q))[0]
+            u[n+1,:] = method(PDE, u[n,:], t[n], dt, ( D, A_, b_, q))[0]
 
         # concatenate the boundary conditions
         u = np.concatenate((a*np.ones((N_time+1,1)), u, b*np.ones((N_time+1,1))), axis = 1)
