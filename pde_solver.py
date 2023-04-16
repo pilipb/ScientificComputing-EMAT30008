@@ -129,7 +129,7 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 
             A = np.zeros((N-1, N-1))
             b = np.zeros(N-1)
             b[0] = 2*alpha*dx
-            A[0, 1] = -2*(1+alpha*dx)
+            A[0, 1] = -2*(1+alpha*dx)/dx
 
         # check which type of boundary condition for the last point
         if type[1] == 'D':
@@ -139,9 +139,10 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 
             A[-2, -1] = 2
         elif type[1] == 'R':
             b[-1] = 2*beta*dx
-            A[-2, -1] = -2*(1+beta*dx)
+            A[-2, -1] = -2*(1+beta*dx)/dx
 
         return A, b
+
     
     # create the boundary matrices
     A_, b_ = boundary(alpha, beta, bound)
@@ -164,8 +165,9 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 
 
                 u[n+1,i-1] = u[n,i-1] + dt * PDE(t[n], u[n,:], (D, A_, b_, q))[i-1]
 
-        # concatenate the boundary conditions   
-        u = np.concatenate((a*np.ones((N_time+1,1)), u, b*np.ones((N_time+1,1))), axis = 1)
+        # concatenate the boundary conditions - for plotting
+        u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
+        
 
         return u, t, x
 
@@ -180,10 +182,13 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 
         u = sol.y
         t = sol.t
 
+        print(len(u))
+
         N_time = len(t)
 
         # add on the u(alpha,t) and u(beta,t) boundary conditions - for plotting
-        u = np.concatenate((a*np.ones((1,N_time)), u, b*np.ones((1,N_time))), axis = 0)
+        u = np.concatenate((alpha*np.ones((N_time,1)), u, beta*np.ones((N_time,1))), axis = 0)
+        
 
         return u.T, t, x
 
@@ -210,7 +215,7 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 
             u[n+1,:] = method(PDE, u[n,:], t[n], dt, ( D, A_, b_, q))[0]
 
         # concatenate the boundary conditions
-        u = np.concatenate((a*np.ones((N_time+1,1)), u, b*np.ones((N_time+1,1))), axis = 1)
+        u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
 
         return u, t, x
 
@@ -234,7 +239,7 @@ if __name__ == '__main__':
     beta = 0.0
     f = lambda x: np.sin((np.pi*(x-a)/b-a))
     t_final = 0.5
-    N = 100
+    N = 10
 
     # define the exact solution
     u_exact = lambda x, t: np.sin(np.pi*(x-a)/b-a)*np.exp(-np.pi**2*D*t/b**2)
