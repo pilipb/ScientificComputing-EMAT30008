@@ -182,12 +182,10 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 
         u = sol.y
         t = sol.t
 
-        print(len(u))
-
         N_time = len(t)
 
         # add on the u(alpha,t) and u(beta,t) boundary conditions - for plotting
-        u = np.concatenate((alpha*np.ones((N_time,1)), u, beta*np.ones((N_time,1))), axis = 0)
+        u = np.concatenate((alpha*np.ones((1,N_time)), u, beta*np.ones((1,N_time))), axis = 0)
         
 
         return u.T, t, x
@@ -253,6 +251,7 @@ if __name__ == '__main__':
 
         # plot the solution at 3 different times
         for n in np.linspace(0, len(t)-1, 3, dtype = int):
+
             plt.plot(x, u[n,:], label = '%s at t = %.2f' % (method, t[n]))
 
             # plot the exact solution at the same times
