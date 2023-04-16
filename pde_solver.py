@@ -22,7 +22,7 @@ from scipy.integrate import solve_ivp
 from solvers import *
 from math import ceil
 
-def pde_solver(f, alpha, beta, a, b, D,q, t_final, N, C= 0.49, method = 'RK4'):
+def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x: 0,  C= 0.49, method = 'RK4'):
 
     '''
     A PDE solver that implements different integration methods to solve the PDE
@@ -41,21 +41,23 @@ def pde_solver(f, alpha, beta, a, b, D,q, t_final, N, C= 0.49, method = 'RK4'):
     f : function
         the initial condition
     alpha : float
-        the left boundary - Dirichlet
+        the left boundary 
     beta : float
-        the right boundary - Dirichlet
+        the right boundary 
     a : float
-        the left boundary value - Dirichlet
+        the left boundary value 
     b : float
-        the right boundary value - Dirichlet
+        the right boundary value 
+    bound : string
+        the type of boundary condition
     D : float
         the diffusion coefficient from form 
-    q : function
-        the source term in the form q(x,t,u)
     t_final : float
         the final time
     N : int
         the number of grid points
+    q : function
+        the source term default = 0
     C : float
         the Courant number - CFL condition default = 0.49 (for homemade methods)
     method : string
@@ -65,9 +67,9 @@ def pde_solver(f, alpha, beta, a, b, D,q, t_final, N, C= 0.49, method = 'RK4'):
     '''
 
     # create the grid
-    x = np.linspace(alpha, beta, N+1)
+    x = np.linspace(a, b, N+1)
     x_int = x[1:-1] # interior points
-    dx = (beta-alpha)/N
+    dx = (b-a)/N
 
     # time discretization
     dt = C*dx**2/D
@@ -82,38 +84,22 @@ def pde_solver(f, alpha, beta, a, b, D,q, t_final, N, C= 0.49, method = 'RK4'):
     def PDE(t, u , *args):
         # unpack the args
         D = args[0]
-        q = args[1]
-        A = args[2]
-        beta = args[3]
-        return (D / dx**2) * (A @ u + beta) + q(x_int,t, u)
+        A_ = args[1]
+        b_ = args[2]
+        q = args[3]
+        return (D / dx**2) * (A_ @ u + b_) + q(x_int,t, u)
         
     
     '''
     annoyingly the solve_ivp function requires the PDE to have args as separate arguments,
     this is not the case for all my own methods so I have to define the PDE again
     '''
-    def PDE_ivp(t, u, D, A, beta, q):
-        return (D / dx**2) * (A @ u + beta) + q(x_int,t, u)
+    def PDE_ivp(t, u, D, A_, b_, q):
+        return (D / dx**2) * (A_ @ u + b_) + q(x_int,t, u)
 
-    # create the matrix A_DD
-    A_DD = np.zeros((N-1, N-1))
-    for i in range(1, N-2):
-        A_DD[i, i-1] = 1
-        A_DD[i, i] = -2
-        A_DD[i, i+1] = 1
-
-    A_DD[0, 1] = 1
-    A_DD[0, 0] = -2
-    A_DD[-1, -2] = 1
-    A_DD[-1, -1] = -2
-
-    # create the vector b_DD
-    b_DD = np.zeros(N-1)
-    b_DD[0] = alpha
-    b_DD[-1] = beta
 
     '''
-    write alpha function to create the boundary matrices A and beta for different types of boundary conditions
+    write a function to create the boundary matrices A and beta for different types of boundary conditions
     
     '''
     def boundary(alpha, beta, type):
@@ -126,6 +112,9 @@ def pde_solver(f, alpha, beta, a, b, D,q, t_final, N, C= 0.49, method = 'RK4'):
             the type of boundary condition
             options: 'DD', 'DN', 'DR', 'ND', 'NN', 'NR','RD', 'RN', 'RR'
         '''
+        # check the type of boundary condition is valid
+        if type not in ['DD', 'DN', 'DR', 'ND', 'NN', 'NR','RD', 'RN', 'RR']:
+            raise ValueError('Invalid boundary condition type')
         # check which type of boundary condition for the first point
         if type[0] == 'D':
             A = np.zeros((N-1, N-1))
@@ -152,7 +141,10 @@ def pde_solver(f, alpha, beta, a, b, D,q, t_final, N, C= 0.49, method = 'RK4'):
             b[-1] = 2*beta*dx
             A[-2, -1] = -2*(1+beta*dx)
 
-        return A, beta
+        return A, b
+    
+    # create the boundary matrices
+    A_, b_ = boundary(alpha, beta, bound)
 
 
 
@@ -170,10 +162,10 @@ def pde_solver(f, alpha, beta, a, b, D,q, t_final, N, C= 0.49, method = 'RK4'):
 
             for i in range(1, N):
 
-                u[n+1,i-1] = u[n,i-1] + dt * PDE(t[n], u[n,:], args=(D, A_DD, b_DD))[i-1]
+                u[n+1,i-1] = u[n,i-1] + dt * PDE(t[n], u[n,:], args=(D, A_, b_, q))[i-1]
 
         # concatenate the boundary conditions   
-        u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
+        u = np.concatenate((a*np.ones((N_time+1,1)), u, b*np.ones((N_time+1,1))), axis = 1)
 
         return u, t, x
 
@@ -182,7 +174,7 @@ def pde_solver(f, alpha, beta, a, b, D,q, t_final, N, C= 0.49, method = 'RK4'):
 
         print('Using the solve_ivp function...\n')
         
-        sol = solve_ivp(PDE_ivp, (0, t_final), f(x_int), args=(D, A_DD, b_DD))
+        sol = solve_ivp(PDE_ivp, (0, t_final), f(x_int), args=(D, A_, b_, q))
 
         # extract the solution
         u = sol.y
@@ -191,7 +183,7 @@ def pde_solver(f, alpha, beta, a, b, D,q, t_final, N, C= 0.49, method = 'RK4'):
         N_time = len(t)
 
         # add on the u(alpha,t) and u(beta,t) boundary conditions - for plotting
-        u = np.concatenate((alpha*np.ones((1,N_time)), u, beta*np.ones((1,N_time))), axis = 0)
+        u = np.concatenate((a*np.ones((1,N_time)), u, b*np.ones((1,N_time))), axis = 0)
 
         return u.T, t, x
 
@@ -215,10 +207,10 @@ def pde_solver(f, alpha, beta, a, b, D,q, t_final, N, C= 0.49, method = 'RK4'):
         for n in range(0, N_time):
 
             # update the solution
-            u[n+1,:] = method(PDE, u[n,:], t[n], dt,args=( D, A_DD, b_DD))[0]
+            u[n+1,:] = method(PDE, u[n,:], t[n], dt,args=( D, A_, b_, q))[0]
 
         # concatenate the boundary conditions
-        u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
+        u = np.concatenate((a*np.ones((N_time+1,1)), u, b*np.ones((N_time+1,1))), axis = 1)
 
         return u, t, x
 
@@ -236,22 +228,23 @@ if __name__ == '__main__':
 
     # define the problem
     D = 0.5
-    alpha = 0.0
-    beta = 1.0
+    a = 0.0
+    b = 1.0
     alpha = 0.0
     beta = 0.0
-    f = lambda x: np.sin((np.pi*(x-alpha)/beta-alpha))
+    f = lambda x: np.sin((np.pi*(x-a)/b-a))
     t_final = 0.5
+    N = 100
 
     # define the exact solution
-    u_exact = lambda x, t: np.sin(np.pi*(x-alpha)/beta-alpha)*np.exp(-np.pi**2*D*t/beta**2)
+    u_exact = lambda x, t: np.sin(np.pi*(x-a)/b-a)*np.exp(-np.pi**2*D*t/b**2)
 
 
     # solve the problem for RK4, explicit_euler, and solve_ivp
     for method in ['RK4', 'explicit_euler', 'solve_ivp']:
 
         # solve the problem
-        u, t, x = pde_solver(f, alpha, beta, alpha, beta, D, t_final, N = 10, C = 0.49, method = method)
+        u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = method)
 
         # plot the solution at 3 different times
         for n in np.linspace(0, len(t)-1, 3, dtype = int):
@@ -274,8 +267,8 @@ if __name__ == '__main__':
     D = 1.0
     myu = [2,4]
 
-    # define the function f(x) = exp(myu*u)
-    def f(x, u, args):
+    # define the function q(x) = exp(myu*u)
+    def q(x, u, args):
         myu = args[0]
         return np.exp(myu*u)
     
