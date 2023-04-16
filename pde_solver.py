@@ -22,7 +22,7 @@ from scipy.integrate import solve_ivp
 from solvers import *
 from math import ceil
 
-def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x: 0,  C= 0.49, method = 'RK4'):
+def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 0,  C= 0.49, method = 'RK4'):
 
     '''
     A PDE solver that implements different integration methods to solve the PDE
@@ -83,10 +83,10 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x: 0,  C= 0
     # define the PDE - for alpha constant time therefore its alpha 1st order ODE
     def PDE(t, u , *args):
         # unpack the args
-        D = args[0]
-        A_ = args[1]
-        b_ = args[2]
-        q = args[3]
+        D = args[0][0]
+        A_ = args[0][1]
+        b_ = args[0][2]
+        q = args[0][3]
         return (D / dx**2) * (A_ @ u + b_) + q(x_int,t, u)
         
     
@@ -207,7 +207,7 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x: 0,  C= 0
         for n in range(0, N_time):
 
             # update the solution
-            u[n+1,:] = method(PDE, u[n,:], t[n], dt,args=( D, A_, b_, q))[0]
+            u[n+1,:] = method(PDE, u[n,:], t[n], dt, args=( D, A_, b_, q))[0]
 
         # concatenate the boundary conditions
         u = np.concatenate((a*np.ones((N_time+1,1)), u, b*np.ones((N_time+1,1))), axis = 1)
