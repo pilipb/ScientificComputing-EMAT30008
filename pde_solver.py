@@ -22,7 +22,7 @@ from scipy.integrate import solve_ivp
 from solvers import *
 from math import ceil
 
-def pde_solver(f, alpha, beta, alpha, beta, D,q, t_final, N, C= 0.49, method = 'RK4'):
+def pde_solver(f, alpha, beta, a, b, D,q, t_final, N, C= 0.49, method = 'RK4'):
 
     '''
     A PDE solver that implements different integration methods to solve the PDE
@@ -44,9 +44,9 @@ def pde_solver(f, alpha, beta, alpha, beta, D,q, t_final, N, C= 0.49, method = '
         the left boundary - Dirichlet
     beta : float
         the right boundary - Dirichlet
-    alpha : float
+    a : float
         the left boundary value - Dirichlet
-    beta : float
+    b : float
         the right boundary value - Dirichlet
     D : float
         the diffusion coefficient from form 
