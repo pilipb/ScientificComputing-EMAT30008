@@ -66,7 +66,7 @@ def bvp_solver(q, a, b,N , *args , D = 1.0, alpha = None,beta = None, method='ro
     # define the vector q as a function of u but length N-1 
     def mak_q(u): 
         if callable(q):
-            # make a vector of q(x) for each x in x_int every time u changes
+            # make a vector of length x_int, and width 1 with q(x,u,args) for each x in x_int
             q_vec = q(x_int, u, *args)
             return q_vec
         else:
@@ -74,6 +74,7 @@ def bvp_solver(q, a, b,N , *args , D = 1.0, alpha = None,beta = None, method='ro
         
     # solve the linear system
     if method == 'scipy': # use SciPy root - use when q is a function of u
+
         sol = root(lambda u: D*A_mat.dot(u) +  b_vec + mak_q(u), u)
         if not sol.success:
             raise ValueError('The solution did not converge')
@@ -109,7 +110,7 @@ if __name__ == '__main__':
     beta = 1
     a = 0
     b = 1
-    N = 10
+    N = 50
     # myu = 4
 
     # define the method and boundary condition
@@ -119,7 +120,6 @@ if __name__ == '__main__':
     # solve for myu in [0, 4]
     myus = np.linspace(0, 4, 10)
     for myu in myus:
-
 
         # solve the problem
         u, xi = bvp_solver(q, a, b, N, myu,D=D, alpha=alpha, beta=beta, method=method, bound_type=bound_type)
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     # plot the exact solution
     # plt.plot(xi, exact(xi), '-', label='approximation by q(x) = 1')
     # plt.title('Bratu problem with q(x) = exp(myu*u) where myu = %f' % myu)
-    
+
     plt.legend()
     plt.xlabel('x')
     plt.ylabel('u')
