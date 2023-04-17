@@ -38,7 +38,9 @@ def shooting(f, y0, T, args = None):
 
         # unpack the initial conditions and period guess
         T = initial_vals[-1]
-        y0 = initial_vals[:-1]
+        y0 = initial_vals[:-1] 
+
+        # if the period decreases its likely that the solution found is the wrong solution
 
         Y , _ = solve_to(f, y0, 0, T, 0.01, 'RK4', args=args)
 
