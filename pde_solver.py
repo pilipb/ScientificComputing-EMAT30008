@@ -245,84 +245,140 @@ if __name__ == '__main__':
 
     # test the solver for the linear diffusion equation
 
-    # define the problem
-    D = 0.5
-    a = 0.0
-    b = 1.0
-    alpha = 0.0
-    beta = 0.0
-    f = lambda x: np.sin((np.pi*(x-a)/b-a))
-    t_final = 0.5
-    N = 10
+    # # define the problem
+    # D = 0.5
+    # a = 0.0
+    # b = 1.0
+    # alpha = 0.0
+    # beta = 0.0
+    # f = lambda x: np.sin((np.pi*(x-a)/b-a))
+    # t_final = 0.5
+    # N = 10
 
-    # define the exact solution
-    u_exact = lambda x, t: np.sin(np.pi*(x-a)/b-a)*np.exp(-np.pi**2*D*t/b**2)
-
-
-    # solve the problem for RK4, explicit_euler, and solve_ivp
-    for method in ['RK4', 'explicit_euler', 'solve_ivp']:
-
-        # solve the problem
-        u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = method)
-
-        # plot the solution at 3 different times
-        for n in np.linspace(0, len(t)-1, 3, dtype = int):
-
-            plt.plot(x, u[n,:], label = '%s at t = %.2f' % (method, t[n]))
-
-            # plot the exact solution at the same times
-            plt.plot(x, u_exact(x, t[n]), '--', label = 'exact at t = %.2f' % t[n])
+    # # define the exact solution
+    # u_exact = lambda x, t: np.sin(np.pi*(x-a)/b-a)*np.exp(-np.pi**2*D*t/b**2)
 
 
+    # # solve the problem for RK4, explicit_euler, and solve_ivp
+    # for method in ['RK4', 'explicit_euler', 'solve_ivp']:
 
-        plt.title('Linear diffusion equation - %s' % method)
-        plt.legend()
-        plt.xlabel('x')
-        plt.ylabel('u(x,t)')
-        plt.show()
+    #     # solve the problem
+    #     u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = method)
+
+    #     # plot the solution at 3 different times
+    #     for n in np.linspace(0, len(t)-1, 3, dtype = int):
+
+    #         plt.plot(x, u[n,:], label = '%s at t = %.2f' % (method, t[n]))
+
+    #         # plot the exact solution at the same times
+    #         plt.plot(x, u_exact(x, t[n]), '--', label = 'exact at t = %.2f' % t[n])
+
+
+
+    #     plt.title('Linear diffusion equation - %s' % method)
+    #     plt.legend()
+    #     plt.xlabel('x')
+    #     plt.ylabel('u(x,t)')
+    #     plt.show()
 
 
     ### solve the dynamic Bratu problem
 
+    # # define the problem
+    # D = 1.0
+    # myu = [2,4]
+
+    # # u(0,t) = 0
+    # alpha = 0.0
+    # # u(1,t) = 0
+    # beta = 0.0
+    # a = 0.0
+    # b = 1.0
+    # f = lambda x: np.zeros(len(x))
+    # t_final = 0.5
+    # N = 10
+
+
+    # # define the function q(x) = exp(myu*u)
+    # def q(x,t, u, args):
+    #     myu = args[0]
+    #     # return np.exp(myu*u)
+    #     return np.ones(len(x))
+    
+    # # define the exact solution
+    # # u_exact = lambda x, t, myu: np.exp(-myu**2*t)*np.sin(np.pi*x)
+
+    # # exact solution for source term q(x) = 1
+    # def u_exact(x, t, myu):
+    #     return (-1/(2*D))*(x - a) * (x - b) + ((beta - alpha)/(b - a))*(x- a) + alpha
+
+    
+    # # compute solution for different values of myu
+    # for myu in [2]:
+
+    #     # solve the problem
+    #     u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = 'RK4', q = q, args = [myu])
+
+    #     # plot the solution at 3 different times
+    #     for n in np.linspace(0, len(t)-1, 10, dtype = int):
+                
+    #         plt.plot(x, u[n,:], label = 'RK4 at t = %.2f' % t[n])
+
+    #         # plot the exact solution at the same times
+    #         plt.plot(x, u_exact(x, t[n], myu), '--', label = 'exact at t = %.2f' % t[n])
+
+
+
+    # plt.title('Dynamic Bratu problem - RK4')
+    # plt.legend()
+    # plt.xlabel('x')
+    # plt.ylabel('u(x,t)')
+    # plt.show()
+
+    ### solve the heat equation with neumann boundary condition
+
     # define the problem
     D = 1.0
-    myu = [2,4]
-
-    # u(0,t) = 0
-    alpha = 0.0
-    # u(1,t) = 0
-    beta = 0.0
     a = 0.0
     b = 1.0
-    f = lambda x: np.zeros(len(x))
+
+    # u_x(0,t) = 0
+    alpha = 0.0
+
+    # u_x(1,t) = 0
+    beta = 0.0
+
+    # initial condition u(x,0) = sin(pi*x)
+    f = lambda x: np.sin(np.pi*x)
+
+    # final time
     t_final = 0.5
-    N = 10
 
+    # number of time steps
+    N = 50
 
-    # define the function q(x) = exp(myu*u)
-    def q(x,t, u, args):
-        myu = args[0]
-        return np.exp(myu*u)
-    
     # define the exact solution
-    u_exact = lambda x, t, myu: np.exp(-myu**2*t)*np.sin(np.pi*x)
+    u_exact = lambda x, t: np.sin(np.pi*x)*np.exp(-np.pi**2*D*t)
 
-    
-    # compute solution for different values of myu
-    for myu in [2, 4]:
+    # solve the problem
+    u, t, x = pde_solver(f, alpha, beta, a, b, 'NN', D, t_final, N, method = 'solve_ivp')
 
-        plt.plot(x, u[n,:], label = 'myu = %i' % (myu))
-
-        # plot the exact solution for the same value of myu
-        plt.plot(x, u_exact(x, t[n], myu), '--', label = 'exact for myu = %i' % myu)
+    # plot the solution at 3 different times
+    for n in np.linspace(0, len(t)-1, 10, dtype = int):
 
 
+        plt.plot(x, u[n,:], label = 'RK4 at t = %.2f' % t[n])
 
-    plt.title('Dynamic Bratu problem - RK4')
+
+
+    plt.title('Heat equation with Neumann boundary condition')
     plt.legend()
     plt.xlabel('x')
     plt.ylabel('u(x,t)')
     plt.show()
+
+    
+
 
     
 
