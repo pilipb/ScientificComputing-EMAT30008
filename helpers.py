@@ -70,7 +70,7 @@ def tdma(A, b):
     
     Parameters:
     -----------------
-    a: array
+    A: array
         the A matrix
     b: array
         the b vector
@@ -88,17 +88,17 @@ def tdma(A, b):
     x = np.zeros(N)
 
     # solve the linear system
-    c[0] = a[0, 1]/a[0, 0]
-    d[0] = b[0]/a[0, 0]
+    c[0] = A[0, 1]/A[0, 0]
+    d[0] = b[0]/A[0, 0]
 
     # loop over the matrix
     for i in range(1, N-1):
         # solve the linear system
-        c[i] = a[i, i+1]/(a[i, i] - a[i, i-1]*c[i-1])
-        d[i] = (b[i] - a[i, i-1]*d[i-1])/(a[i, i] - a[i, i-1]*c[i-1])
+        c[i] = A[i, i+1]/(A[i, i] - A[i, i-1]*c[i-1])
+        d[i] = (b[i] - A[i, i-1]*d[i-1])/(A[i, i] - A[i, i-1]*c[i-1])
 
     # solve the last linear system
-    d[-1] = (b[-1] - a[-1, -2]*d[-2])/(a[-1, -1] - a[-1, -2]*c[-2])
+    d[-1] = (b[-1] - A[-1, -2]*d[-2])/(A[-1, -1] - A[-1, -2]*c[-2])
 
     # solve the linear system backwards
     x[-1] = d[-1]
