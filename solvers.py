@@ -51,7 +51,7 @@ def rk4_step(f, y0, t0, delta_t, args):
 
     '''
     # run error check
-    error_check(f, y0, t0, delta_t, args = args)
+    # error_check(f, y0, t0, delta_t, args = args)
 
 
     k1 = delta_t * f( t0, y0, args)

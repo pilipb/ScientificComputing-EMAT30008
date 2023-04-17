@@ -30,7 +30,7 @@ def shooting(f, y0, T, args = None):
     T_guess = T
 
     # define the find dx/dt function
-    def dxdt(Y, t, f=f):
+    def dxdt(t, Y, f=f):
         return f(t, Y, args=args)[0]
 
     # define the function that will be solved for the initial conditions and period
@@ -40,7 +40,7 @@ def shooting(f, y0, T, args = None):
         T = initial_vals[-1]
         y0 = initial_vals[:-1]
 
-        Y , _ = solve_to(f, y0, 0, T, 0.01, 'RK4', args = args)
+        Y , _ = solve_to(f, y0, 0, T, 0.01, 'RK4', args=args)
 
         num_dim = len(y0)
         row = np.zeros(num_dim)
@@ -49,7 +49,7 @@ def shooting(f, y0, T, args = None):
         for i in range(num_dim):
             row[i] = Y[-1,i] - y0[i]
   
-        row = np.append(row, dxdt(Y[-1],T))
+        row = np.append(row, dxdt(T, Y[-1]))
 
         output = np.array(row)
         return output
