@@ -151,6 +151,34 @@ def pde_solver(f, alpha, beta, a, b,bound_type, D, t_final, N, q = lambda x_int,
         
 
         return u.T, t, x
+    
+    elif method == 'implicit_euler':
+
+        print('Using the implicit Euler method...\n')
+
+        # print some info about time step
+        print('\ndt = %.6f' % dt)
+        print('%i time steps will be needed\n' % N_time)
+
+        # define the matrices for the implicit method
+        C = dt * D / dx**2
+        A = np.eye(N-1) - C * A_
+        b = u + C * b_
+
+        # loop over the steps
+        for n in range(0, N_time):
+                
+                u[n+1,:] = np.linalg.solve(A, b[n,:])
+    
+                # update the boundary conditions
+                u[n+1,0] = alpha
+                u[n+1,-1] = beta
+
+        # concatenate the boundary conditions - for plotting
+        u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
+
+        return u, t, x
+
 
     else: # use the solve_to function
 
@@ -213,7 +241,7 @@ if __name__ == '__main__':
 
 
     # solve the problem for RK4, explicit_euler, and solve_ivp
-    for method in ['RK4', 'explicit_euler', 'solve_ivp']:
+    for method in ['RK4', 'explicit_euler', 'solve_ivp', 'implicit_euler']:
 
         # solve the problem
         u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = method)
