@@ -84,6 +84,7 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u, 
 
     # if args:
     #     q = lambda x_int,t,u: q(x_int,t,u, *args)
+    print(args)
 
     # define the PDE - for alpha constant time therefore its alpha 1st order ODE
     def PDE(t, u , *args):
@@ -92,7 +93,16 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u, 
         A_ = args[0][1]
         b_ = args[0][2]
         q = args[0][3]
-        return (D / dx**2) * (A_ @ u + b_) + q(x_int,t, u , *args)
+
+        # calculate the source term
+        if callable(q):
+            qval = q(x_int, t, u, *args[0][4:])
+        else:
+            qval = q
+
+        # apply the PDE
+        return (D / dx**2) * (A_ @ u + b_) + qval
+
         
     
     '''
@@ -171,7 +181,7 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u, 
 
             for i in range(1, N):
 
-                u[n+1,i-1] = u[n,i-1] + dt * PDE(t[n], u[n,:], (D, A_, b_, q))[i-1]
+                u[n+1,i-1] = u[n,i-1] + dt * PDE(t[n], u[n,:], (D, A_, b_, q, args))[i-1]
 
         # concatenate the boundary conditions - for plotting
         u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
@@ -183,8 +193,8 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u, 
     elif method == 'solve_ivp':
 
         print('Using the solve_ivp function...\n')
-        
-        sol = solve_ivp(PDE_ivp, (0, t_final), f(x_int), args=(D, A_, b_, q))
+
+        sol = solve_ivp(PDE_ivp, (0, t_final), f(x_int), args=(D, A_, b_, q, args))
 
         # extract the solution
         u = sol.y
@@ -220,7 +230,7 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u, 
         for n in range(0, N_time):
 
             # update the solution
-            u[n+1,:] = method(PDE, u[n,:], t[n], dt, ( D, A_, b_, q))[0]
+            u[n+1,:] = method(PDE, u[n,:], t[n], dt, ( D, A_, b_, q , args))[0]
 
         # concatenate the boundary conditions
         u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
@@ -239,40 +249,41 @@ if __name__ == '__main__':
 
     # test the solver for the linear diffusion equation
 
-    # # define the problem
-    # D = 0.5
-    # a = 0.0
-    # b = 1.0
-    # alpha = 0.0
-    # beta = 0.0
-    # f = lambda x: np.sin((np.pi*(x-a)/b-a))
-    # t_final = 0.5
-    # N = 10
+    # define the problem
+    D = 0.5
+    a = 0.0
+    b = 1.0
+    alpha = 0.0
+    beta = 0.0
+    f = lambda x: np.sin((np.pi*(x-a)/b-a))
+    t_final = 0.5
+    N = 10
 
-    # # define the exact solution
-    # u_exact = lambda x, t: np.sin(np.pi*(x-a)/b-a)*np.exp(-np.pi**2*D*t/b**2)
-
-
-    # # solve the problem for RK4, explicit_euler, and solve_ivp
-    # for method in ['RK4', 'explicit_euler', 'solve_ivp']:
-
-    #     # solve the problem
-    #     u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = method)
-
-    #     # plot the solution at 3 different times
-    #     for n in np.linspace(0, len(t)-1, 3, dtype = int):
-
-    #         plt.plot(x, u[n,:], label = '%s at t = %.2f' % (method, t[n]))
-
-    #         # plot the exact solution at the same times
-    #         plt.plot(x, u_exact(x, t[n]), '--', label = 'exact at t = %.2f' % t[n])
+    # define the exact solution
+    u_exact = lambda x, t: np.sin(np.pi*(x-a)/b-a)*np.exp(-np.pi**2*D*t/b**2)
 
 
+    # solve the problem for RK4, explicit_euler, and solve_ivp
+    for method in ['RK4', 'explicit_euler', 'solve_ivp']:
 
-    #     plt.legend()
-    #     plt.xlabel('x')
-    #     plt.ylabel('u(x,t)')
-    #     plt.show()
+        # solve the problem
+        u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = method)
+
+        # plot the solution at 3 different times
+        for n in np.linspace(0, len(t)-1, 3, dtype = int):
+
+            plt.plot(x, u[n,:], label = '%s at t = %.2f' % (method, t[n]))
+
+            # plot the exact solution at the same times
+            plt.plot(x, u_exact(x, t[n]), '--', label = 'exact at t = %.2f' % t[n])
+
+
+
+        plt.title('Linear diffusion equation - %s' % method)
+        plt.legend()
+        plt.xlabel('x')
+        plt.ylabel('u(x,t)')
+        plt.show()
 
 
     ### solve the dynamic Bratu problem
@@ -287,7 +298,7 @@ if __name__ == '__main__':
     beta = 0.0
     a = 0.0
     b = 1.0
-    f = lambda x: 0
+    f = lambda x: np.zeros(len(x))
     t_final = 0.5
     N = 10
 
@@ -297,14 +308,21 @@ if __name__ == '__main__':
         myu = args[0]
         return np.exp(myu*u)
     
+    # define the exact solution
+    u_exact = lambda x, t, myu: np.exp(-myu**2*t)*np.sin(np.pi*x)
+
+    
     # compute solution for different values of myu
     for myu in [2, 4]:
 
-        # solve the problem
-        u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = 'RK4', q = q, args = [myu])
+        plt.plot(x, u[n,:], label = 'myu = %i' % (myu))
 
-        plt.plot(x, u[-1,:], label = 'myu = %i' % myu)
+        # plot the exact solution for the same value of myu
+        plt.plot(x, u_exact(x, t[n], myu), '--', label = 'exact for myu = %i' % myu)
 
+
+
+    plt.title('Dynamic Bratu problem - RK4')
     plt.legend()
     plt.xlabel('x')
     plt.ylabel('u(x,t)')
