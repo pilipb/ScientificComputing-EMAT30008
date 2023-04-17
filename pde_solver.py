@@ -21,8 +21,9 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 from solvers import *
 from math import ceil
+from helpers import *
 
-def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u, *args: 0,  C= 0.49, method = 'RK4', args = None):
+def pde_solver(f, alpha, beta, a, b,bound_type, D, t_final, N, q = lambda x_int,t,u, *args: 0,  C= 0.49, method = 'RK4', args = None):
 
     '''
     A PDE solver that implements different integration methods to solve the PDE
@@ -31,8 +32,11 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u, 
 
     u_t = D*u_xx + q(x,t,u)
 
-    u(alpha,t) = alpha
-    u(beta,t) = beta
+    left boundary condition:
+    D,N,R (a,t) =  alpha (Dirichlet, Neumann, Robin)
+
+    right boundary condition:
+    D,N,R (b,t) =  beta (Dirichlet, Neumann, Robin)
 
     u(x,0) = f(x)
 
@@ -99,69 +103,13 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u, 
         # apply the PDE
         return (D / dx**2) * (A_ @ u + b_) + qval
 
-        
-    
-    '''
-    annoyingly the solve_ivp function requires the PDE to have args as separate arguments,
-    this is not the case for all my own methods so I have to define the PDE again
-    '''
+    # define the PDE - different form for solve_ivp
     def PDE_ivp(t, u, D, A_, b_, q, *args):
         return (D / dx**2) * (A_ @ u + b_) + q(x_int,t, u, *args)
 
-
-    '''
-    write a function to create the boundary matrices A and beta for different types of boundary conditions
-    
-    '''
-    def boundary(alpha, beta, type):
-        '''
-        alpha : float
-            the left boundary
-        beta : float
-            the right boundary
-        type : string
-            the type of boundary condition
-            options: 'DD', 'DN', 'DR', 'ND', 'NN', 'NR','RD', 'RN', 'RR'
-        '''
-        # check the type of boundary condition is valid
-        if type not in ['DD', 'DN', 'DR', 'ND', 'NN', 'NR','RD', 'RN', 'RR']:
-            raise ValueError('Invalid boundary condition type')
-        # make basic A tri-diagonal matrix
-        A = np.zeros((N-1, N-1))
-        np.fill_diagonal(A[1:], 1)
-        np.fill_diagonal(A[:,1:], 1)
-        np.fill_diagonal(A, -2)
-
-        # check which type of boundary condition for the first point
-        if type[0] == 'D':
-            b = np.zeros(N-1)
-            b[0] = alpha
-        elif type[0] == 'N':
-            b = np.zeros(N-1)
-            b[0] = 2*alpha*dx
-            A[0, 1] = 2
-        elif type[0] == 'R':
-            b = np.zeros(N-1)
-            b[0] = 2*alpha*dx
-            A[0, 1] = -2*(1+alpha*dx)/dx
-
-        # check which type of boundary condition for the last point
-        if type[1] == 'D':
-            b[-1] = beta
-        elif type[1] == 'N':
-            b[-1] = 2*beta*dx
-            A[-2, -1] = 2
-        elif type[1] == 'R':
-            b[-1] = 2*beta*dx
-            A[-2, -1] = -2*(1+beta*dx)/dx
-
-        return A, b
-
     
     # create the boundary matrices
-    A_, b_ = boundary(alpha, beta, bound)
-
-
+    A_, b_ = boundary(alpha, beta, N, dx, bound_type)
 
     # identify the method
     if method == 'explicit_euler':
@@ -243,43 +191,48 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u, 
 
 if __name__ == '__main__':
 
+    '''
+    Testing the solver
+
+    '''
+
     # test the solver for the linear diffusion equation
 
-    # # define the problem
-    # D = 0.5
-    # a = 0.0
-    # b = 1.0
-    # alpha = 0.0
-    # beta = 0.0
-    # f = lambda x: np.sin((np.pi*(x-a)/b-a))
-    # t_final = 0.5
-    # N = 10
+    # define the problem
+    D = 0.5
+    a = 0.0
+    b = 1.0
+    alpha = 0.0
+    beta = 0.0
+    f = lambda x: np.sin((np.pi*(x-a)/b-a))
+    t_final = 0.5
+    N = 10
 
-    # # define the exact solution
-    # u_exact = lambda x, t: np.sin(np.pi*(x-a)/b-a)*np.exp(-np.pi**2*D*t/b**2)
-
-
-    # # solve the problem for RK4, explicit_euler, and solve_ivp
-    # for method in ['RK4', 'explicit_euler', 'solve_ivp']:
-
-    #     # solve the problem
-    #     u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = method)
-
-    #     # plot the solution at 3 different times
-    #     for n in np.linspace(0, len(t)-1, 3, dtype = int):
-
-    #         plt.plot(x, u[n,:], label = '%s at t = %.2f' % (method, t[n]))
-
-    #         # plot the exact solution at the same times
-    #         plt.plot(x, u_exact(x, t[n]), '--', label = 'exact at t = %.2f' % t[n])
+    # define the exact solution
+    u_exact = lambda x, t: np.sin(np.pi*(x-a)/b-a)*np.exp(-np.pi**2*D*t/b**2)
 
 
+    # solve the problem for RK4, explicit_euler, and solve_ivp
+    for method in ['RK4', 'explicit_euler', 'solve_ivp']:
 
-    #     plt.title('Linear diffusion equation - %s' % method)
-    #     plt.legend()
-    #     plt.xlabel('x')
-    #     plt.ylabel('u(x,t)')
-    #     plt.show()
+        # solve the problem
+        u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = method)
+
+        # plot the solution at 3 different times
+        for n in np.linspace(0, len(t)-1, 3, dtype = int):
+
+            plt.plot(x, u[n,:], label = '%s at t = %.2f' % (method, t[n]))
+
+            # plot the exact solution at the same times
+            plt.plot(x, u_exact(x, t[n]), '--', label = 'exact at t = %.2f' % t[n])
+
+
+
+        plt.title('Linear diffusion equation - %s' % method)
+        plt.legend()
+        plt.xlabel('x')
+        plt.ylabel('u(x,t)')
+        plt.show()
 
 
     ### solve the dynamic Bratu problem
@@ -337,45 +290,45 @@ if __name__ == '__main__':
 
     ### solve the heat equation with neumann boundary condition
 
-    # define the problem
-    D = 1.0
-    a = 0.0
-    b = 1.0
+    # # define the problem
+    # D = 1.0
+    # a = 0.0
+    # b = 1.0
 
-    # u_x(0,t) = 0
-    alpha = 0.0
+    # # u_x(0,t) = 0
+    # alpha = 0.0
 
-    # u_x(1,t) = 0
-    beta = 0.0
+    # # u_x(1,t) = 0
+    # beta = 0.0
 
-    # initial condition u(x,0) = sin(pi*x)
-    f = lambda x: np.sin(np.pi*x)
+    # # initial condition u(x,0) = sin(pi*x)
+    # f = lambda x: np.sin(np.pi*x)
 
-    # final time
-    t_final = 0.5
+    # # final time
+    # t_final = 0.5
 
-    # number of time steps
-    N = 50
+    # # number of time steps
+    # N = 50
 
-    # define the exact solution
-    u_exact = lambda x, t: np.sin(np.pi*x)*np.exp(-np.pi**2*D*t)
+    # # define the exact solution
+    # u_exact = lambda x, t: np.sin(np.pi*x)*np.exp(-np.pi**2*D*t)
 
-    # solve the problem
-    u, t, x = pde_solver(f, alpha, beta, a, b, 'NN', D, t_final, N, method = 'solve_ivp')
+    # # solve the problem
+    # u, t, x = pde_solver(f, alpha, beta, a, b, 'NN', D, t_final, N, method = 'solve_ivp')
 
-    # plot the solution at 3 different times
-    for n in np.linspace(0, len(t)-1, 10, dtype = int):
-
-
-        plt.plot(x, u[n,:], label = 'RK4 at t = %.2f' % t[n])
+    # # plot the solution at 3 different times
+    # for n in np.linspace(0, len(t)-1, 10, dtype = int):
 
 
+    #     plt.plot(x, u[n,:], label = 'RK4 at t = %.2f' % t[n])
 
-    plt.title('Heat equation with Neumann boundary condition')
-    plt.legend()
-    plt.xlabel('x')
-    plt.ylabel('u(x,t)')
-    plt.show()
+
+
+    # plt.title('Heat equation with Neumann boundary condition')
+    # plt.legend()
+    # plt.xlabel('x')
+    # plt.ylabel('u(x,t)')
+    # plt.show()
 
     
 
