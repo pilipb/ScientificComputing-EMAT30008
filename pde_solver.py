@@ -23,7 +23,7 @@ from solvers import *
 from math import ceil
 from helpers import *
 
-def pde_solver(f, alpha, beta, a, b,bound_type, D, t_final, N, q = lambda x_int,t,u, *args: 0,  C= 0.49, method = 'RK4', args = None):
+def pde_solver(f, alpha, beta, a, b,bound_type, D, t_final, N, q = lambda x_int,t,u, *args: 0,  CFL= 0.49, method = 'RK4', args = None):
 
     '''
     A PDE solver that implements different integration methods to solve the PDE
@@ -78,7 +78,7 @@ def pde_solver(f, alpha, beta, a, b,bound_type, D, t_final, N, q = lambda x_int,
     dx = (b-a)/N
 
     # time discretization
-    dt = C*dx**2/D
+    dt = CFL*dx**2/D
     N_time = ceil(t_final/dt)
     t = dt * np.arange(N_time)
 
@@ -167,12 +167,15 @@ def pde_solver(f, alpha, beta, a, b,bound_type, D, t_final, N, q = lambda x_int,
 
         # loop over the steps
         for n in range(0, N_time):
-                
-                u[n+1,:] = np.linalg.solve(A, b[n,:])
-    
+
+                u[n+1,:] = np.linalg.solve(A, b[-1,:])
+
                 # update the boundary conditions
                 u[n+1,0] = alpha
-                u[n+1,-1] = beta
+                u[n+1,-1] = beta    
+
+    
+
 
         # concatenate the boundary conditions - for plotting
         u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
