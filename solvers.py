@@ -98,13 +98,13 @@ def heun_step(f, y0, t0, delta_t, args):
 # error checking function for the steps
 def error_check(f, y0, t0, delta_t, t1=None, method=None, args=None):
     if not callable(f):
-        raise ValueError('f must be a function')
+        raise TypeError('f must be a function')
     # if not isinstance(y0, (np.ndarray, list)):
     #     raise ValueError('y0 must be a numpy array or list')
     # if not isinstance(t0, (int, float)):
     #     raise ValueError('t0 must be a number')
     if not isinstance(delta_t, (int, float)):
-        raise ValueError('delta_t must be a number')
+        raise TypeError('delta_t must be a number')
     if t1 is not None:
         if not isinstance(t1, (int, float)):
             raise ValueError('t1 must be a number')
@@ -112,10 +112,10 @@ def error_check(f, y0, t0, delta_t, t1=None, method=None, args=None):
             raise ValueError('t1 must be greater than t0')
     if method is not None:
         if not isinstance(method, str):
-            raise ValueError('method must be a string')
+            raise TypeError('method must be a string')
     if args is not None:
         if not isinstance(args, (np.ndarray, list, tuple)):
-            raise ValueError('args must be a numpy array or list')
+            raise TypeError('args must be a numpy array or list')
         
         
 
