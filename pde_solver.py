@@ -117,8 +117,8 @@ def pde_solver(f, alpha, beta, a, b,bound_type, D, t_final, N, q = lambda x_int,
         print('Using the explicit Euler method...\n')
 
         # print some info about time step
-        # print('\ndt = %.6f' % dt)
-        # print('%i time steps will be needed\n' % N_time)
+        print('\ndt = %.6f' % dt)
+        print('%i time steps will be needed\n' % N_time)
 
         # loop over the steps
         for n in range(0, N_time):
@@ -164,6 +164,8 @@ def pde_solver(f, alpha, beta, a, b,bound_type, D, t_final, N, q = lambda x_int,
         C = dt * D / dx**2
         A = np.eye(N-1) - C * A_
         b = u + C * b_
+        print('implicit_euler: A = ', A)
+        print('implicit_euler: b = ', b)
 
         # loop over the steps
         for n in range(0, N_time):
@@ -178,9 +180,38 @@ def pde_solver(f, alpha, beta, a, b,bound_type, D, t_final, N, q = lambda x_int,
         u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
 
         return u, t, x
+    
+    elif method == 'crank_nicolson':
+
+        print('Using the Crank-Nicolson method...\n')
+
+        # print some info about time step
+        print('\ndt = %.6f' % dt)
+        print('%i time steps will be needed\n' % N_time)
+
+        # define the matrices for the implicit method
+        C = dt * D / dx**2
+        A = np.eye(N-1) - C/2 * A_
+        b = A * u[-1,:] + C/2 * b_
+        print('crank_nicolson: A = ', A)
+        print('crank_nicolson: b = ', b)
+
+        # loop over the steps
+        for n in range(0, N_time):
+                
+            u[n+1,:] = np.linalg.solve(A, b[-1,:])
+
+            # update the boundary conditions
+            u[n+1,0] = alpha
+            u[n+1,-1] = beta
+
+        # concatenate the boundary conditions - for plotting
+        u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
+
+        return u, t, x
 
 
-    else: # use the solve_to function
+    elif method in ['Euler', 'RK4', 'Heun']:
 
         # find method
         methods = {'Euler': euler_step, 'RK4': rk4_step, 'Heun': heun_step}
@@ -208,12 +239,9 @@ def pde_solver(f, alpha, beta, a, b,bound_type, D, t_final, N, q = lambda x_int,
         u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
 
         return u, t, x
-
-
-
-
-
-
+    
+    else:
+        raise ValueError('Invalid method, please enter a valid method: Euler, RK4, Heun, explicit_euler, implicit_euler, solve_ivp or define your own in solvers.py')
 
 
 
@@ -240,14 +268,14 @@ if __name__ == '__main__':
     u_exact = lambda x, t: np.sin(np.pi*(x-a)/b-a)*np.exp(-np.pi**2*D*t/b**2)
 
 
-    # solve the problem for RK4, explicit_euler, and solve_ivp
-    for method in ['RK4', 'explicit_euler', 'solve_ivp', 'implicit_euler']:
+    # solve the problem for RK4, explicit_euler, implicit_euler, solve_ivp and crank_nicolson
+    for method in ['RK4', 'explicit_euler', 'solve_ivp', 'implicit_euler', 'crank_nicolson']:
 
         # solve the problem
         u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = method)
 
         # plot the solution at 3 different times
-        for n in np.linspace(0, len(t)-1, 3, dtype = int):
+        for n in np.linspace(0, len(t)-1, 5, dtype = int):
 
             plt.plot(x, u[n,:], label = '%s at t = %.2f' % (method, t[n]))
 
