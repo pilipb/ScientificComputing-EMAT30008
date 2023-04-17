@@ -90,6 +90,7 @@ def bvp_solver(q, a, b,N , *args , D = 1.0, alpha = None,beta = None, method='ro
             raise ValueError('q must be linear when using Numpy solve')
         q_vec = mak_q(u)
         u = solve(-D*A_mat, b_vec + q_vec)
+
     elif method == 'tdma': # use Thomas algorithm - use when the matrix is tridiagonal and q linear
         if callable(q):
             raise ValueError('q must be linear when using Thomas algorithm')
@@ -97,7 +98,7 @@ def bvp_solver(q, a, b,N , *args , D = 1.0, alpha = None,beta = None, method='ro
         u = tdma(-D*A_mat, b_vec + mak_q(u))
 
     # add the boundary conditions to the solution
-    u = np.concatenate(([alpha], u, [beta]))
+    u = np.concatenate(([alpha], -u, [beta]))
 
     return u, x
 

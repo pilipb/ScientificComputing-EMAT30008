@@ -29,22 +29,23 @@ def boundary(alpha, beta, N, dx, type):
     # check the type of boundary condition is valid
     if type not in ['DD', 'DN', 'DR', 'ND', 'NN', 'NR','RD', 'RN', 'RR']:
         raise ValueError('Invalid boundary condition type')
+    
     # make basic A tri-diagonal matrix
     A = np.zeros((N-1, N-1))
     np.fill_diagonal(A[1:], 1)
     np.fill_diagonal(A[:,1:], 1)
     np.fill_diagonal(A, -2)
 
+    # make the b vector
+    b = np.zeros(N-1)
+
     # check which type of boundary condition for the first point
     if type[0] == 'D':
-        b = np.zeros(N-1)
         b[0] = alpha
     elif type[0] == 'N':
-        b = np.zeros(N-1)
         b[0] = 2*alpha*dx
         A[0, 1] = 2
     elif type[0] == 'R':
-        b = np.zeros(N-1)
         b[0] = 2*alpha*dx
         A[0, 1] = -2*(1+alpha*dx)/dx
 
