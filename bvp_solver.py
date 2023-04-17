@@ -60,7 +60,7 @@ def bvp_solver(q, a, b,N , *args , D = 1.0, alpha = None,beta = None, method='ro
     # define an initial guess for the solution
     u = np.zeros(N-1)
 
-    # use boundary functions to define the boundary conditions
+    # use boundary functions to define the boundary conditions (for interior points)
     A_mat, b_vec = boundary(alpha, beta, N, dx, bound_type)
 
     # define the vector q as a function of u but length N-1 
@@ -74,10 +74,15 @@ def bvp_solver(q, a, b,N , *args , D = 1.0, alpha = None,beta = None, method='ro
         
     # solve the linear system
     if method == 'scipy': # use SciPy root - use when q is a function of u
+        # define the function f(u) = 0
+        def f(u):
+            return -D*A_mat@u + b_vec + mak_q(u)
+        # solve the system
+        sol = root(f, u)
 
-        sol = root(lambda u: D*A_mat.dot(u) +  b_vec + mak_q(u), u)
         if not sol.success:
             raise ValueError('The solution did not converge')
+        
         u = sol.x
         
     elif method == 'numpy': # use Numpy solve - use when q linear
@@ -107,11 +112,10 @@ if __name__ == '__main__':
     # define the parameters
     D = 1
     alpha = 0
-    beta = 1
+    beta = 0
     a = 0
     b = 1
-    N = 50
-    # myu = 4
+    N = 10
 
     # define the method and boundary condition
     method = 'scipy'
