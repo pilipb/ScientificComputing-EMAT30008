@@ -82,10 +82,6 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u, 
     u = np.zeros((N_time+1, N-1))
     u[0,:] = f(x_int)
 
-    # if args:
-    #     q = lambda x_int,t,u: q(x_int,t,u, *args)
-    print(args)
-
     # define the PDE - for alpha constant time therefore its alpha 1st order ODE
     def PDE(t, u , *args):
         # unpack the args
