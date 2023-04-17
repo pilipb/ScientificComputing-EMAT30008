@@ -22,7 +22,7 @@ from scipy.integrate import solve_ivp
 from solvers import *
 from math import ceil
 
-def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 0,  C= 0.49, method = 'RK4'):
+def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u, *args: 0,  C= 0.49, method = 'RK4', args = None):
 
     '''
     A PDE solver that implements different integration methods to solve the PDE
@@ -63,6 +63,8 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 
     method : string
         the integration method to be used
         options: 'Euler', 'RK4', 'Heun', 'solve_ivp', 'explicit_euler'
+    args : tuple
+        the arguments for the q function
 
     '''
 
@@ -80,6 +82,9 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 
     u = np.zeros((N_time+1, N-1))
     u[0,:] = f(x_int)
 
+    # if args:
+    #     q = lambda x_int,t,u: q(x_int,t,u, *args)
+
     # define the PDE - for alpha constant time therefore its alpha 1st order ODE
     def PDE(t, u , *args):
         # unpack the args
@@ -87,15 +92,15 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 
         A_ = args[0][1]
         b_ = args[0][2]
         q = args[0][3]
-        return (D / dx**2) * (A_ @ u + b_) + q(x_int,t, u)
+        return (D / dx**2) * (A_ @ u + b_) + q(x_int,t, u , *args)
         
     
     '''
     annoyingly the solve_ivp function requires the PDE to have args as separate arguments,
     this is not the case for all my own methods so I have to define the PDE again
     '''
-    def PDE_ivp(t, u, D, A_, b_, q):
-        return (D / dx**2) * (A_ @ u + b_) + q(x_int,t, u)
+    def PDE_ivp(t, u, D, A_, b_, q, *args):
+        return (D / dx**2) * (A_ @ u + b_) + q(x_int,t, u, *args)
 
 
     '''
@@ -158,8 +163,8 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 
         print('Using the explicit Euler method...\n')
 
         # print some info about time step
-        print('\ndt = %.6f' % dt)
-        print('%i time steps will be needed\n' % N_time)
+        # print('\ndt = %.6f' % dt)
+        # print('%i time steps will be needed\n' % N_time)
 
         # loop over the steps
         for n in range(0, N_time):
@@ -205,9 +210,11 @@ def pde_solver(f, alpha, beta, a, b,bound, D, t_final, N, q = lambda x_int,t,u: 
         # set method
         method = methods[method]
 
+        print('Using the %s method...\n' % method.__name__)
+
         # print some info about time step
-        print('\ndt = %.6f' % dt)
-        print('%i time steps will be needed\n' % N_time)
+        # print('\ndt = %.6f' % dt)
+        # print('%i time steps will be needed\n' % N_time)
         
         # loop over the time steps
         for n in range(0, N_time):
@@ -232,40 +239,40 @@ if __name__ == '__main__':
 
     # test the solver for the linear diffusion equation
 
-    # define the problem
-    D = 0.5
-    a = 0.0
-    b = 1.0
-    alpha = 0.0
-    beta = 0.0
-    f = lambda x: np.sin((np.pi*(x-a)/b-a))
-    t_final = 0.5
-    N = 10
+    # # define the problem
+    # D = 0.5
+    # a = 0.0
+    # b = 1.0
+    # alpha = 0.0
+    # beta = 0.0
+    # f = lambda x: np.sin((np.pi*(x-a)/b-a))
+    # t_final = 0.5
+    # N = 10
 
-    # define the exact solution
-    u_exact = lambda x, t: np.sin(np.pi*(x-a)/b-a)*np.exp(-np.pi**2*D*t/b**2)
-
-
-    # solve the problem for RK4, explicit_euler, and solve_ivp
-    for method in ['RK4', 'explicit_euler', 'solve_ivp']:
-
-        # solve the problem
-        u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = method)
-
-        # plot the solution at 3 different times
-        for n in np.linspace(0, len(t)-1, 3, dtype = int):
-
-            plt.plot(x, u[n,:], label = '%s at t = %.2f' % (method, t[n]))
-
-            # plot the exact solution at the same times
-            plt.plot(x, u_exact(x, t[n]), '--', label = 'exact at t = %.2f' % t[n])
+    # # define the exact solution
+    # u_exact = lambda x, t: np.sin(np.pi*(x-a)/b-a)*np.exp(-np.pi**2*D*t/b**2)
 
 
+    # # solve the problem for RK4, explicit_euler, and solve_ivp
+    # for method in ['RK4', 'explicit_euler', 'solve_ivp']:
 
-        plt.legend()
-        plt.xlabel('x')
-        plt.ylabel('u(x,t)')
-        plt.show()
+    #     # solve the problem
+    #     u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = method)
+
+    #     # plot the solution at 3 different times
+    #     for n in np.linspace(0, len(t)-1, 3, dtype = int):
+
+    #         plt.plot(x, u[n,:], label = '%s at t = %.2f' % (method, t[n]))
+
+    #         # plot the exact solution at the same times
+    #         plt.plot(x, u_exact(x, t[n]), '--', label = 'exact at t = %.2f' % t[n])
+
+
+
+    #     plt.legend()
+    #     plt.xlabel('x')
+    #     plt.ylabel('u(x,t)')
+    #     plt.show()
 
 
     ### solve the dynamic Bratu problem
@@ -274,10 +281,35 @@ if __name__ == '__main__':
     D = 1.0
     myu = [2,4]
 
+    # u(0,t) = 0
+    alpha = 0.0
+    # u(1,t) = 0
+    beta = 0.0
+    a = 0.0
+    b = 1.0
+    f = lambda x: 0
+    t_final = 0.5
+    N = 10
+
+
     # define the function q(x) = exp(myu*u)
-    def q(x, u, args):
+    def q(x,t, u, args):
         myu = args[0]
         return np.exp(myu*u)
+    
+    # compute solution for different values of myu
+    for myu in [2, 4]:
+
+        # solve the problem
+        u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = 'RK4', q = q, args = [myu])
+
+        plt.plot(x, u[-1,:], label = 'myu = %i' % myu)
+
+    plt.legend()
+    plt.xlabel('x')
+    plt.ylabel('u(x,t)')
+    plt.show()
+
     
 
 
