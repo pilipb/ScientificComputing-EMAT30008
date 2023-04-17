@@ -22,32 +22,27 @@ b0 = 0
 # define the function to be integrated
 def hopf_bifurcation(t, Y, args = (b0)):
     b = args
-
     x, y = np.array(Y)
     dxdt = b*x - y - x*(x**2 + y**2)
     dydt = x + b*y - y*(x**2 + y**2)
     return np.array([dxdt, dydt])
 
 
-# define the find dx/dt function
-def dxdt( t, Y, f=hopf_bifurcation):
-    return f(t, Y)[0]
-
 # by varying b from 0 to 2, perform natural parameter continuation
 # define the initial conditions
 Y0 = np.array([0.1, 0.1])
 
 # define the initial guess for the period
-T_guess = 2*math.pi
+T_guess = 10
 
 # define the initial guess for the parameter
 b_guess = 0
 
 # define the step size for the parameter
-b_step = 0.2
+b_step = 0.4
 
 # repeat the process for the next parameter value
-while b_guess < 2:
+for b_guess in [0,1,1.5,1.8,1.9,2]:
     
     sol = shooting(hopf_bifurcation, Y0, T_guess, args = b_guess)
 
@@ -58,7 +53,7 @@ while b_guess < 2:
     Y, t = solve_to(hopf_bifurcation, Y0, 0, T_guess, 0.01, 'RK4', args = b_guess)
     plt.plot(Y[:,0], Y[:,1], label = 'b = ' + str(b_guess))
 
-    b_guess = b_guess + b_step
+# b_guess += b_step
 
 plt.legend()
 plt.show()
