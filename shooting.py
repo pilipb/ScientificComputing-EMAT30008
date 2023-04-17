@@ -6,7 +6,7 @@ import scipy.optimize as scipy
 import math
 
 
-def shooting(f, Y0, T, args = None):
+def shooting(f, y0, T, args = None):
 
     '''
     Implementing a numerical shooting method to solve an ODE to find a periodic solution
@@ -29,28 +29,9 @@ def shooting(f, Y0, T, args = None):
     # unpack the initial conditions and period guess
     T_guess = T
 
-    # y0 = Y0
-
-    # test the initial conditions guess
-    Y , _ = solve_to(f, Y0, 0, 300, 0.01, 'RK4', args = args)
-
-    # derive better starting guess from the solution
-    # [x0,y0] = [np.median(Y[:,0]), np.median(Y[:,1])]
-    y0 = np.median(Y,axis=0)
-    
-    '''
-    The initial conditions are not always in the correct range. To fix this
-    I have found the phase space trajectory for random guess and given that it is
-    going to end up in the periodic solution, I have found the median of the solution
-    and used that as the starting guess for the root finding method as this will be
-    on the periodic phase space trajectory.
-
-    '''
-
     # define the find dx/dt function
     def dxdt(Y, t, f=f):
         return f(t, Y, args=args)[0]
-
 
     # define the function that will be solved for the initial conditions and period
     def fun(initial_vals):
@@ -112,10 +93,10 @@ if __name__ == '__main__':
     '''
 
     # initial guess
-    Y0 = [2,3]
+    Y0 = [10,10]
     
     # solve the ode using the shooting method
-    sol = shooting(ode, Y0, 20, args=[a,b,d])
+    sol = shooting(ode, Y0, 60, args=[a,b,d])
 
 #    extract the period and initial conditions
     T = sol[-1]
@@ -126,12 +107,6 @@ if __name__ == '__main__':
 
     # solve for one period of the solution
     Y,t = solve_to(ode, Y0, 0, T, 0.01, 'RK4', args=[a,b,d])
-
-    # check that the solution is one period
-    if np.allclose(Y[0], Y[-1], atol=1e-5):
-        print('Solution is periodic')
-    else:
-        print('Solution is not periodic')
 
     plt.plot(t, Y)
     plt.xlabel('t')
