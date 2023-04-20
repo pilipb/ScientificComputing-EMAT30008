@@ -161,3 +161,7 @@ plt.plot(t, Y[:,0])
 plt.plot(t, Y[:,1])
 plt.title('T = ' + str(T))
 plt.show()
+
+# However it is difficult to find correct initial conditions for the shooting method
+# so continuation methods can be used
+
