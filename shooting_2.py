@@ -61,6 +61,12 @@ from solve_to import solve_to
 
 # ie: solving the root for G(u0) = 0, where G(u0) = u0 - F(T, u0)
 
+# for autonomous systems, G(u0) = [u0 - F(T, u0), phi(0)] = 0 where phi(0) is the phase condition at time 0
+
+# the phase condition is the x derivative of the solution at time t
+
+# phi(t) = u1' = u2
+
 # solve by passing G(u0) to fsolve
 
 # IMPLEMENTATION:
@@ -74,97 +80,83 @@ def f(t, Y, *args):
     # unpack the variables
     u1, u2 = Y
 
-    # define the derivatives
+    # define the partial derivatives
     u1p = u2
     u2p = 1/m*(-c*u2 - k*u1 + gamma*np.sin(omega*t))
 
     # return the derivatives
     return np.array([u1p, u2p])
  
-
-# define the function to be solved for the initial conditions and period that satisfy the boundary conditions
+# define the function to be solved for the initial conditions and period
 def G(u0, *args):
+    # args in the form of (m, c, k, gamma, omega), (A, B)
     # unpack the arguments
-    m, c, k, gamma, omega = args
+    coeff = args[0][0]
+
+    bounds = args[0][1]
+    A, B = bounds
 
     # unpack the initial conditions
-    u10, u20 = u0
+    u10, u20, T = u0
 
     # define the initial conditions
     u0 = np.array([u10, u20])
 
-    # define the time interval
-    t0 = 0
-    T = 2*np.pi/omega
-    t = np.linspace(t0, T, 1000)
+    # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
+    Y, t = solve_to(f, u0, 0, T, 0.01, 'RK4', args=coeff)
 
-    # solve the ode
-    Y, _ = solve_to(f, u0, t0, T, 0.01, 'RK4', args=args)
-
+    # phase condition is first row of f(T, Y[-1], *args)
+    phi = f(T, Y[-1], coeff)[0]
+    
     # define the boundary conditions
-    u1T = Y[-1,0]
-    u2T = Y[-1,1]
+    u1A = Y[0,0]
+    u1B = Y[-1,0]
 
-    # # define the phase condition
-    # u1p = f(t, Y, args)[:,0]
-    # phase = u1p[-1]
+    # define the function to be solved
+    output = np.array([u1A - A, u1B - B, phi])
 
-    # return the boundary conditions and phase condition
-    return np.array([u1T - u10, u2T - u20])#, phase
+    return output
 
-# run the code for an example
+# solve the function using fsolve
+def solve_G(u0, *args):
+
+    # solve the function
+    u = scipy.fsolve(G, u0, args=args)
+
+    return u
 
 # define the parameters
 m = 1
-c = 1
+c = 0
 k = 1
 gamma = 1
 omega = 1
 
-# define the arguments
-args = (m, c, k, gamma, omega)
+# define the boundary conditions
+A = 0
+B = 0
 
 # define the initial conditions
 u10 = 0
 u20 = 0
-u0 = np.array([u10, u20])
-
-# solve for the initial conditions and period that satisfy the boundary conditions
-u0 = scipy.fsolve(G, u0, args=args, full_output=True)
-
-print(u0)
-# unpack the initial conditions
-u10, u20 = u0[0]
+T = 2*np.pi/omega
 
 # define the initial conditions
-u0 = np.array([u10, u20])
+u0 = np.array([u10, u20, T])
 
-# define the time interval
-t0 = 0
-T = 2*np.pi/omega
-# t = np.linspace(t0, T, 1000)
+# define the arguments
+args = [m, c, k, gamma, omega], [A, B]
 
-# solve the ode
-Y, t = solve_to(f, u0, t0, T, 0.01, 'RK4', args=args)
+# solve the function
+u = solve_G(u0, args)
 
 # unpack the solution
-u1 = Y[:,0]
-u2 = Y[:,1]
+u10, u20, T = u
+
+# solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
+Y, t = solve_to(f, np.array([u10, u20]), 0, T, 0.01, 'RK4', args=args[0])
 
 # plot the solution
-plt.plot(t, u1, label='u1')
-plt.plot(t, u2, label='u2')
-plt.legend()
+plt.plot(t, Y[:,0])
+plt.plot(t, Y[:,1])
 plt.show()
-
-# for autonomous systems, the phase condition is dx/dt(0) = 0
-
-
-
-
-
-
-
-
-
-
