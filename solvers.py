@@ -37,7 +37,7 @@ def rk4_step(f, y0, t0, delta_t, args):
 
     parameters:
     ---------------------------
-    f - function: the function to be integrated (with inputs (Y,t, args)) in first order form of n dimensions
+    f - function: the function to be integrated (with inputs (t, Y, *args)) in first order form of n dimensions
     t0 - float: the initial value of time    
     y0 - array: the initial value of the solution
     delta_t - float: the step size

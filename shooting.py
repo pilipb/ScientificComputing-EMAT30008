@@ -10,7 +10,7 @@ def shooting(f, y0, T, args = None):
 
     '''
     Implementing a numerical shooting method to solve an ODE to find a periodic solution
-    This method will solve the ODE using root finding method to find the limit cycle, using scipy.optimize.fsolve to
+    This method will solve the BVP ODE using root finding method to find the limit cycle, using scipy.optimize.fsolve to
     find the initial conditions and period that satisfy the boundary conditions.
 
     parameters:
