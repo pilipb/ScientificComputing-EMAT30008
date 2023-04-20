@@ -24,7 +24,7 @@ def euler_step(f, y0, t0, delta_t, args):
     # run error check
     error_check(f, y0, t0, delta_t, args = args)
 
-    y1 = y0 + delta_t * f(y0, t0, args)
+    y1 = y0 + delta_t * f( t0, y0 , args)
     t1 = t0 + delta_t
     return y1, t1
 
@@ -89,8 +89,8 @@ def heun_step(f, y0, t0, delta_t, args):
     # run error check
     error_check(f, y0, t0, delta_t, args = args)
 
-    k1 = f(y0, t0, args)
-    k2 = f(y0 + delta_t * k1, t0 + delta_t, args)
+    k1 = f( t0, y0, args)
+    k2 = f(t0 + delta_t, y0 + delta_t * k1, args)
     y1 = y0 + delta_t/2 * (k1 + k2)
     t1 = t0 + delta_t
     return y1, t1
