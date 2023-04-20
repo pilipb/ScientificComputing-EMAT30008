@@ -109,8 +109,8 @@ def G(u0, *args):
     phi = f(T, Y[-1], coeff)[0]
     
     # define the boundary conditions
-    u1A = Y[0,0]
-    u1B = Y[-1,0]
+    u1A = Y[0,1]
+    u1B = Y[-1,1]
 
     # define the function to be solved
     output = np.array([u1A - A, u1B - B, phi])
@@ -127,7 +127,7 @@ def solve_G(u0, *args):
 
 # define the parameters
 m = 1
-c = 0
+c = 1
 k = 1
 gamma = 1
 omega = 1
@@ -159,4 +159,5 @@ Y, t = solve_to(f, np.array([u10, u20]), 0, T, 0.01, 'RK4', args=args[0])
 # plot the solution
 plt.plot(t, Y[:,0])
 plt.plot(t, Y[:,1])
+plt.title('T = ' + str(T))
 plt.show()
