@@ -56,10 +56,9 @@ def test_shooting(f, y0, T0, args = None):
         # (v_i+1 - v_pred_i+1) dot sec = 0
 
         secant = Y[-1] - y0
-
+        delta_sec = secant/np.linalg.norm(secant)
         vi1 = Y[-1]
-        vi1_pred = Y[-1] + secant
-
+        vi1_pred = Y[-1] + delta_sec
         output = np.append(output, np.dot(vi1 - vi1_pred, secant))
 
         return output
@@ -70,16 +69,12 @@ def test_shooting(f, y0, T0, args = None):
 
     sol = scipy.fsolve(fun, y0)
 
-    # return the period and initial conditions that cause the limit cycle: sol = [x0, y0, ... , T]
-    return sol
+    # return the period and initial conditions that cause the limit cycle: sol = [x0, y0, ... , T, p]
+    return sol[:-2], sol[-2], sol[-1]
 
 
 
 #### TEST ####
-
-### TEST ###
-
-
 
 # define the function to be integrated
 def f(t, Y, *args):
@@ -114,7 +109,7 @@ u0 = np.array([u10, u20])
 args = b
 
 # solve the function
-y0 = shooting(f, u0, T, args)
+y0 = test_shooting(f, u0, T, args)
 
 T = y0[-1]
 y0 = y0[:-2]
