@@ -38,26 +38,25 @@ def shooting(f, y0, T, args = None):
 
         Y , _ = solve_to(f, y0, 0, T, 0.01, 'RK4', args=args)
 
+        # make empty array to store the boundary conditions
         num_dim = len(y0)
         row = np.zeros(num_dim)
 
-        row = Y[-1,:] - y0
+        # limit cycle condition
+        row = Y[-1,:] - y0[:]
   
-        row = np.append(row, f(0, Y[0], args)[0])
+        # phase condition
+        row = np.append(row, f(0, Y[0,:], args)[0]) # dx/dt(0) = 0 
 
         return row
 
     # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
     y0 = np.append(y0, T_guess)
 
-    sol  = scipy.fsolve(fun, y0, full_output=True)
-    x = sol[0]
-    mesg = sol[-1]
-    
-    print(mesg)
+    sol  = scipy.fsolve(fun, y0)
     
     # return the period and initial conditions that cause the limit cycle: sol = [x0, y0, ... , T]
-    return x[:-1], x[-1]
+    return sol
 
 
 
@@ -73,14 +72,16 @@ if __name__ == '__main__':
     # define new ode
     a = 1
     d = 0.1
-    b = 0.3
+    b = 0.4
 
     def ode(t, Y, args):
 
         a, b, d = args
         x,y = Y
+        dxdt = x*(1-x) - (a*x*y)/(d+x)
+        dydt = b*y*(1- (y/x))
 
-        return np.array([x*(1-x) - (a*x*y)/(d+x) , b*y*(1- (y/x))])
+        return np.array([dxdt, dydt])
 
 
     '''
