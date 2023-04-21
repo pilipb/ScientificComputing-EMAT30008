@@ -75,7 +75,7 @@ Explanation of the shooting method:
 
 class Shooting():
 
-    def __init__(self, f, u0, T, *args, pal=False):
+    def __init__(self, f, u0, T, *args,  u1=None):
         '''
         Initialising the shooting method
 
@@ -89,14 +89,20 @@ class Shooting():
                 the initial guess for the period of the solution
         args : tuple
                 the arguments for the function f
+        u1 : array
+                the second initial conditions guess for the integration (for pseudo arclength continuation)
         pal : bool
-                whether to use a pseudo arclength continuation method to solve the shooting method
+                whether to use pseudo arclength continuation or not
 
         '''
         self.f = f
         self.u0 = u0
         self.T = T
         self.args = args[0]
+
+        if u1 is not None:
+            self.u1 = u1
+            self.pal = True
 
     
     def shooting_setup(self):
@@ -138,14 +144,14 @@ class Shooting():
 
         G = np.append(row, phi)
 
-        self.G = G
-
         if self.pal == True:
-            G = self.pal_setup(G, self.f, self.u0, Y[-1], self.u2, self.T, self.step, self.args)
+            G = self.pal_setup(G, self.u0, self.u1)
+
+        G.self = G
 
         return G
 
-    def pal_setup(self, G, f, u0, u1, u2, T, step, *args):
+    def pal_setup(self, G, u0, u1):
 
         '''
         Adds the pseudo arclength continuation equation to the shooting method setup
@@ -160,8 +166,6 @@ class Shooting():
                 the initial conditions for the integration
         u1 : array
                 a second initial conditions for the integration
-        u2 : array
-                a guess for the third point in the secant line
         T : float
                 the initial guess for the period of the solution
         args : tuple
@@ -179,8 +183,12 @@ class Shooting():
         # create secant line
         delta = u1 - u0
 
-        # define a prediction
-        u2_p = u1 + step * delta
+        # define a prediction 
+        u2_p = u1 +  delta
+
+        # make an estimate of u2 using the solve to method
+        Y, _ = solve_to(self.f, self.u0, 0, self.T, 0.01, 'RK4', args=self.args)
+        u2 = Y[-1]
 
         # u2 is what we want to solve for in this equation
         pal_eq = np.dot(u2 -  u2_p , delta) 
@@ -188,11 +196,27 @@ class Shooting():
         G = np.append(G, pal_eq)
 
         return G
+    
+    def G(self, u0):
+
+        '''
+        This function will be passed into fsolve to find the initial conditions for the limit cycle
+
+        The initial conditions are:
+
+        u0, T, p
+        
+        '''
+
+        # unpack the initial conditions
+        p0 = u0[-1]
+        self.T = u0[-2]
+        self.u0 = u0[:-2]
 
 
-    def shooting_solve(G):
 
-        # 
+
+
 
 
 
