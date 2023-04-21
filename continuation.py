@@ -7,19 +7,7 @@ import scipy.optimize as scipy
 import math
 
 
-
-# natural parameter continuation
-
-'''
-increment the parameter by a set amount and attempt to find the solution for
-the new parameter value using the previous solution as the initial conditions
-
-'''
-
-
-
-
-# # define a natural parameter continuation function
+# define a natural parameter continuation function
 def nat_continuation(f, u0, plim, T, *args, plot = True):
     '''
     Function will implement a natural parameter continuation method to find the solution to the ODE f
@@ -87,9 +75,16 @@ def nat_continuation(f, u0, plim, T, *args, plot = True):
         ax[1].set_xlabel('p')
         ax[1].set_ylabel('T')
         ax[1].set_title('Period vs Parameter')
-        fig.show()
+
+        plt.show()
 
     return T_list, p_list
+
+
+# # define a pseudo arc length continuation function
+# def pal_continuation(f, u0, plim, T, *args, plot = True):
+
+#     pass
 
 
 
