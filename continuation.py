@@ -125,13 +125,13 @@ def hopf(t, X, *args):
     x = X[0]
     y = X[1]
 
-    dxdt = b*x - y - x*(x**2 + y**2)
-    dydt = x + b*y - y*(x**2 + y**2)
+    dxdt = b*x - y + x*(x**2 + y**2) - x*(x**2 + y**2)**2
+    dydt = x + b*y + y*(x**2 + y**2) - y*(x**2 + y**2)**2
 
     return np.array([dxdt, dydt])
 
 # define the initial conditions
-x0 = [1,5]
+x0 = [-10,10]
 
 # define parameter
 p = 2
@@ -139,14 +139,29 @@ p = 2
 print('second')
 
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-X, C = nat_continuation(hopf, x0, p, vary_p = 0, step = -0.1, max_steps = 40, discret=shooting_setup, solver=scipy.optimize.fsolve)
+X, C = nat_continuation(hopf, x0, p, vary_p = 0, step = -0.1, max_steps = 30, discret=shooting_setup, solver=scipy.optimize.fsolve)
+
+# split the X into x, y and period at each parameter value
+x = [x[0] for x in X]
+y = [x[1] for x in X]
+T = [x[2] for x in X]
 
 # plot the solution
 plt.figure()
 plt.title('Hopf Bifurcation')
-plt.plot(C, X)
+plt.plot(C, x )
+plt.plot(C, y)
 plt.xlabel('parameter b value')
-plt.ylabel('root value')
+plt.ylabel('solution value')
+plt.grid()
+plt.show()
+
+# plot the period
+plt.figure()
+plt.title('Hopf Bifurcation')
+plt.plot(C, T)
+plt.xlabel('parameter b value')
+plt.ylabel('period value')
 plt.grid()
 plt.show()
 
