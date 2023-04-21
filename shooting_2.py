@@ -74,9 +74,9 @@ Explanation of the shooting method:
 '''
 
 
-def shooting(f, u0, T, *args):
+def shooting_setup(f, u0, T, *args):
     '''
-    Implementing a numerical shooting method to solve an ODE to find a periodic solution
+    Implementing a numerical shooting method to set up the function F(u) to be solved for the limit cycle initial conditions
 
     Parameters
     ----------------------------
@@ -88,59 +88,78 @@ def shooting(f, u0, T, *args):
             the initial guess for the period of the solution
     args : tuple
             the arguments for the function f
-
             
     Returns
     ----------------------------
-    u0 : array
-            the initial conditions for the integration that give a limit cycle
-    T : float
-            the period of the solution
+    F(u) : array 
+            the array to be solved that finds the initial conditions for the limit cycle
 
     '''
     # unpack the arguments
     args = args[0]
 
-    def G(u0, *args):
-        '''
-        the function to be solved for the shooting method
+    # unpack the initial conditions
+    T = u0[-1]
+    y0 = u0[:-1]
 
-        Parameters
-        ----------------------------
-        u0 : array (u1, u2 ... T)
-                the initial conditions guess for the integration
-        args : tuple
-                the arguments for the function f
+    # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
+    Y, _ = solve_to(f, y0, 0, T, 0.01, 'RK4', args=args)
 
-        '''
-        # unpack the initial conditions
-        T = u0[-1]
-        y0 = u0[:-1]
+    # phase condition is first row of f(T, Y[-1], *args)
+    phi = f(T, Y[-1], args)[0]
 
-        # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-        Y, _ = solve_to(f, y0, 0, T, 0.01, 'RK4', args=args)
+    # define the f(u) = 0 function
+    num_dim = len(y0)
+    row = np.zeros(num_dim)
 
-        # phase condition is first row of f(T, Y[-1], *args)
-        phi = f(T, Y[-1], args)[0]
+    for i in range(num_dim):
+        row[i] = Y[-1,i] - y0[i]
 
-        # define the f(u) = 0 function
-        num_dim = len(y0)
-        row = np.zeros(num_dim)
+    row = np.append(row, phi)
 
-        for i in range(num_dim):
-            row[i] = Y[-1,i] - y0[i]
+    return row
 
-        row = np.append(row, phi)
+def pal_setup(G, f, u0, u1, T, *args):
 
-        return row
+    '''
+    Adds the pseudo arclength continuation equation to the shooting method setup
+
+    Parameters
+    ----------------------------
+    G : array
+            G(u) = 0 from the shooting method setup
+    f : function
+            the function to be integrated (with inputs (t, Y, *args)) in first order form of n dimensions
+    u0 : array
+            the initial conditions guess for the integration
+    u1 : array
+            a second initial conditions guess for the integration
+    T : float
+            the initial guess for the period of the solution
+    args : tuple
+            the arguments for the function f
+
+
+    Returns
+    ----------------------------
+    G : array 
+            the array to be solved that finds the initial conditions for the limit cycle
+            in a pseudo arclength continuation method
+
+    '''
+
+
+
     
-    # make initial guess
-    u0 = np.append(u0, T)
-    
-    # solve the function using fsolve
-    u = scipy.fsolve(G, u0, args=args)
 
-    return u[:-1], u[-1]
+
+# make initial guess
+u0 = np.append(u0, T)
+
+# solve the function using fsolve
+u = scipy.fsolve(G, u0, args=args)
+
+# u[:-1], u[-1]
 
     
 
