@@ -2,6 +2,7 @@ import scipy.optimize
 import numpy as np
 import matplotlib.pyplot as plt
 from shooting import shooting_setup
+from solve_to import solve_to
 
 '''
 results = continuation(myode,  # the ODE to use
@@ -67,12 +68,18 @@ def nat_continuation(ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discr
     except:
         param = p0
 
+    T = 10
+
 
     # check that the discret either a lambda function or a function
     if not callable(discret):
         raise ValueError("discretisation must be a function or lambda function")
     
-    fun, u0 = discret(ode, x0, T=0, args = param )
+    fun = discret(ode, x0, T=T, args = param )
+    if discret == shooting_setup:
+        u0 = np.append(x0, T)
+    else:
+        u0 = x0
 
     sol = scipy.optimize.fsolve(fun, u0, args = (param,))
 
@@ -102,11 +109,11 @@ def cubic(x, *args):
 x0 = 1
 
 # define the limit of c
-def linear(x, x0,T, args):
-    return x , x0
+def linear(x, x0, T, args):
+    return x 
 
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-X, C = nat_continuation(cubic, x0, -2, vary_p = 0, step = 0.01, max_steps = 400, discret=linear, solver=scipy.optimize.fsolve)
+X, C = nat_continuation(cubic, x0, -2, vary_p = 0, step = 0.1, max_steps = 40, discret=linear, solver=scipy.optimize.fsolve)
 
 # plot the solution
 plt.figure()
@@ -131,10 +138,10 @@ def hopf(t, X, *args):
     return np.array([dxdt, dydt])
 
 # define the initial conditions
-x0 = [-10,10]
+x0 = [0.1,0.1]
 
 # define parameter
-p = 2
+p = 1
 
 print('second')
 
@@ -146,13 +153,15 @@ x = [x[0] for x in X]
 y = [x[1] for x in X]
 T = [x[2] for x in X]
 
+y0 = np.array([x[-1], y[-1]])
+
 # plot the solution
 plt.figure()
 plt.title('Hopf Bifurcation')
-plt.plot(C, x )
+plt.plot(C, x)
 plt.plot(C, y)
 plt.xlabel('parameter b value')
-plt.ylabel('solution value')
+plt.ylabel('starting values of x and y')
 plt.grid()
 plt.show()
 
@@ -164,6 +173,9 @@ plt.xlabel('parameter b value')
 plt.ylabel('period value')
 plt.grid()
 plt.show()
+
+
+
 
 
 

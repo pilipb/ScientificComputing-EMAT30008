@@ -29,6 +29,8 @@ def test_shooting(f, y0, T0, args = None):
     T_guess = T0
     p_guess = args
 
+    print('\nPseudo-arclength continuation method\n')
+
     # define the function that will be solved for the initial conditions and period
     def fun(initial_vals):
         print(initial_vals)
@@ -43,11 +45,9 @@ def test_shooting(f, y0, T0, args = None):
         num_dim = len(y0)
         row = np.zeros(num_dim)
 
-
-        for i in range(num_dim):
-            row[i] = Y[-1,i] - y0[i]
+        row = Y[-1,:] - y0
   
-        row = np.append(row, f(T, Y[-1], args)[0])
+        row = np.append(row, f(0, Y[0,:], args)[0])
 
 
         output = np.array(row)
@@ -55,10 +55,15 @@ def test_shooting(f, y0, T0, args = None):
         # making the pseudo-arclength condition
         # (v_i+1 - v_pred_i+1) dot sec = 0
 
+        # u1 - u0
         secant = Y[-1] - y0
-        delta_sec = secant/np.linalg.norm(secant)
-        vi1 = Y[-1]
-        vi1_pred = Y[-1] + delta_sec
+
+        y,t = solve_to(f, Y[-1], 0, T, 0.01, 'RK4', args=p0) 
+        vi1 = y[-1]
+
+        vi1_pred = Y[-1] + secant
+
+        # (v_i+1 - v_pred_i+1) dot sec = 0
         output = np.append(output, np.dot(vi1 - vi1_pred, secant))
 
         return output

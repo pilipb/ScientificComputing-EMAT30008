@@ -2,7 +2,8 @@ from solve_to import *
 from solvers import *
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.optimize as scipy
+# import scipy.optimize as scipy
+import scipy
 import math
 
 
@@ -62,7 +63,7 @@ def shooting_setup(f, y0, T= 0, args = None):
     # solve the system of equations for the initial conditions [x0, y0, ... ,T] that satisfy the boundary conditions
     u0 = np.append(y0, T)
 
-    return fun, u0
+    return fun
 
 
 def shooting_solve(fun, u0):
@@ -81,15 +82,13 @@ def shooting_solve(fun, u0):
     
     '''
 
-    sol  = scipy.fsolve(fun, u0, args = (0,))
+    sol  = scipy.optimize.root(fun, u0, args = (0,))
     
     # return the period and initial conditions that cause the limit cycle: sol = [x0, y0, ... , T]
-    u0 = sol[:-1]
-    T = sol[-1]
+    u0 = sol.x[:-1]
+    T = sol.x[-1]
 
     return u0, T
-
-
 
 
 #### TEST ####
@@ -104,7 +103,7 @@ if __name__ == '__main__':
     # define new ode
     a = 1
     d = 0.1
-    b = 0.2
+    b = 1.0
 
     def ode(t, Y, args):
 
@@ -112,6 +111,19 @@ if __name__ == '__main__':
         x,y = Y
         dxdt = x*(1-x) - (a*x*y)/(d+x)
         dydt = b*y*(1- (y/x))
+
+        return np.array([dxdt, dydt])
+    
+    # now test natural continuation with a differential equation - Hopf bifurcation
+    def hopf(t, X, *args):
+
+        b = args[0]
+
+        x = X[0]
+        y = X[1]
+
+        dxdt = b*x - y + x*(x**2 + y**2) - x*(x**2 + y**2)**2
+        dydt = x + b*y + y*(x**2 + y**2) - y*(x**2 + y**2)**2
 
         return np.array([dxdt, dydt])
 
@@ -123,13 +135,15 @@ if __name__ == '__main__':
 
     # initial guess
     Y0 = [0.1,0.1]
+    T = 10
     
     # solve the ode using the shooting method
-    fun, u0 = shooting_setup(ode, Y0, T=20, args=[a,b,d])
+    fun = shooting_setup(hopf, Y0, T=T, args=b)
+    u0 = np.append(Y0, T)
     u0, T0 = shooting_solve(fun, u0)
 
     # solve for one period of the solution
-    Y,t = solve_to(ode, u0, 0, T0, 0.01, 'RK4', args=[a,b,d])
+    Y,t = solve_to(hopf, u0, 0, T0, 0.01, 'RK4', args=b)
 
     plt.plot(t, Y)
     plt.xlabel('t')
