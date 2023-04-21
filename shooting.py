@@ -6,7 +6,7 @@ import scipy.optimize as scipy
 import math
 
 
-def shooting(f, y0, T, args = None):
+def shooting_setup(f, y0, T, args = None):
 
     '''
     Implementing a numerical shooting method to solve an ODE to find a periodic solution
@@ -62,6 +62,11 @@ def shooting(f, y0, T, args = None):
     # solve the system of equations for the initial conditions [x0, y0, ... ,T] that satisfy the boundary conditions
     u0 = np.append(y0, T)
 
+    return fun, u0
+
+
+def shooting_solve(fun, u0):
+
     sol  = scipy.fsolve(fun, u0)
     
     # return the period and initial conditions that cause the limit cycle: sol = [x0, y0, ... , T]
@@ -84,7 +89,7 @@ if __name__ == '__main__':
     # define new ode
     a = 1
     d = 0.1
-    b = 0.25
+    b = 0.2
 
     def ode(t, Y, args):
 
@@ -106,7 +111,8 @@ if __name__ == '__main__':
     T = 20
     
     # solve the ode using the shooting method
-    u0, T0 = shooting(ode, Y0, T, args=[a,b,d])
+    fun, u0 = shooting_setup(ode, Y0, T, args=[a,b,d])
+    u0, T0 = shooting_solve(fun, u0)
 
     # solve for one period of the solution
     Y,t = solve_to(ode, u0, 0, T0, 0.01, 'RK4', args=[a,b,d])
