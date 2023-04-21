@@ -1,6 +1,7 @@
 import scipy.optimize
 import numpy as np
 import matplotlib.pyplot as plt
+from shooting import shooting_setup
 
 '''
 results = continuation(myode,  # the ODE to use
@@ -19,9 +20,10 @@ results = continuation(myode,  # the ODE to use
 # x^3 - x + c = 0
 
 # natural continuation will find the roots of the equation, then increment c and find the roots again
+def linear(x, x0, args):
+    return x , x0
 
-
-def nat_continuation(ode, x0, p0 = 0, vary_p =0, step = 0.1, max_steps = 100, discret=lambda x: x, solver=scipy.optimize.fsolve):
+def nat_continuation(ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discret=linear, solver=scipy.optimize.fsolve):
 
     # initialize the solution
     X = []
@@ -34,9 +36,18 @@ def nat_continuation(ode, x0, p0 = 0, vary_p =0, step = 0.1, max_steps = 100, di
     to make the F(x) = 0 that will be solved by the solver
     
     '''
+    # check that the discret either a lambda function or a function
+    if not callable(discret):
+        raise ValueError("discret must be a function or lambda function")
     
-    
-    sol = scipy.optimize.fsolve(ode, x0, args = (p0))
+    try:
+        param = p0[vary_p]
+    except:
+        param = p0
+
+    fun, u0 = discret(ode, x0, args = param )
+
+    sol = scipy.optimize.fsolve(fun, u0, args = (param))
 
     # append the solution
     X.append(sol)
