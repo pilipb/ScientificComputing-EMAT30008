@@ -149,51 +149,51 @@ def shooting(f, u0, T, *args):
 
 
 
-# define the function to be integrated
-def f(t, Y, *args):
-    # unpack the arguments
-    m, c, k, gamma, omega = args[0]
+# # define the function to be integrated
+# def f(t, Y, *args):
+#     # unpack the arguments
+#     m, c, k, gamma, omega = args[0]
 
-    # unpack the variables
-    u1, u2 = Y
+#     # unpack the variables
+#     u1, u2 = Y
 
-    # define the partial derivatives
-    u1p = u2
-    u2p = 1/m*(-c*u2 - k*u1 + gamma*np.sin(omega*t))
+#     # define the partial derivatives
+#     u1p = u2
+#     u2p = 1/m*(-c*u2 - k*u1 + gamma*np.sin(omega*t))
 
-    # return the derivatives
-    return np.array([u1p, u2p])
+#     # return the derivatives
+#     return np.array([u1p, u2p])
  
-# define the parameters
-m = 1
-c = 1
-k = 1
-gamma = 1
-omega = 1
+# # define the parameters
+# m = 1
+# c = 1
+# k = 1
+# gamma = 1
+# omega = 1
 
-# define the initial conditions
-u10 = 0
-u20 = 0
-T = 2*np.pi/omega
+# # define the initial conditions
+# u10 = 0
+# u20 = 0
+# T = 2*np.pi/omega
 
-# define the initial conditions
-u0 = np.array([u10, u20])
+# # define the initial conditions
+# u0 = np.array([u10, u20])
 
-# define the arguments
-args = (m, c, k, gamma, omega)
+# # define the arguments
+# args = (m, c, k, gamma, omega)
 
-# solve the function
-y0, T = shooting(f, u0, T, args)
+# # solve the function
+# y0, T = shooting(f, u0, T, args)
 
-# solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-Y, t = solve_to(f, y0, 0, T, 0.01, 'RK4', args=args)
+# # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
+# Y, t = solve_to(f, y0, 0, T, 0.01, 'RK4', args=args)
 
-# plot the solution
-plt.plot(t, Y[:,0])
-plt.plot(t, Y[:,1])
-plt.title('T = ' + str(T))
-plt.show()
+# # plot the solution
+# plt.plot(t, Y[:,0])
+# plt.plot(t, Y[:,1])
+# plt.title('T = ' + str(T))
+# plt.show()
 
-# However it is difficult to find correct initial conditions for the shooting method
-# so continuation methods can be used
+# # However it is difficult to find correct initial conditions for the shooting method
+# # so continuation methods can be used
 
