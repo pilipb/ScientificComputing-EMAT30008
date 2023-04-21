@@ -6,7 +6,7 @@ import scipy.optimize as scipy
 import math
 
 
-def shooting_setup(f, y0, T, args = None):
+def shooting_setup(f, y0, T= 0, args = None):
 
     '''
     Implementing a numerical shooting method to solve an ODE to find a periodic solution
@@ -108,10 +108,9 @@ if __name__ == '__main__':
 
     # initial guess
     Y0 = [0.1,0.1]
-    T = 20
     
     # solve the ode using the shooting method
-    fun, u0 = shooting_setup(ode, Y0, T, args=[a,b,d])
+    fun, u0 = shooting_setup(ode, Y0, T=20, args=[a,b,d])
     u0, T0 = shooting_solve(fun, u0)
 
     # solve for one period of the solution

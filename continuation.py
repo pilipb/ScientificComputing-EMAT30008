@@ -20,10 +20,8 @@ results = continuation(myode,  # the ODE to use
 # x^3 - x + c = 0
 
 # natural continuation will find the roots of the equation, then increment c and find the roots again
-def linear(x, x0, args):
-    return x , x0
 
-def nat_continuation(ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discret=linear, solver=scipy.optimize.fsolve):
+def nat_continuation(ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discret=None, solver=scipy.optimize.fsolve):
 
     # initialize the solution
     X = []
@@ -38,7 +36,7 @@ def nat_continuation(ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discr
     '''
     # check that the discret either a lambda function or a function
     if not callable(discret):
-        raise ValueError("discret must be a function or lambda function")
+        raise ValueError("discretisation must be a function or lambda function")
     
     try:
         param = p0[vary_p]
@@ -75,14 +73,18 @@ def cubic(x, *args):
 x0 = 1
 
 # define the limit of c
+def linear(x, x0, args):
+    return x , x0
 
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-X, C = nat_continuation(cubic, x0, -2)
+X, C = nat_continuation(cubic, x0, -2, vary_p = 0, step = 0.1, max_steps = 100, discret=linear, solver=scipy.optimize.fsolve)
 
 # plot the solution
 plt.plot(C, X)
 plt.grid()
 plt.show()
+
+
 
 
 
