@@ -66,6 +66,20 @@ def shooting_setup(f, y0, T= 0, args = None):
 
 
 def shooting_solve(fun, u0):
+    '''
+    Solve the system of equations made in the setup function
+
+    Parameters:
+    ----------------------------
+    fun - function: such that fun(u) = 0
+    u0 - array: the initial guess for the solution
+
+    Returns:
+    ----------------------------
+    u0 - array: the initial conditions that cause the solution to be periodic: u0 = [x0, y0, ... ]
+    T - float: the period of the solution
+    
+    '''
 
     sol  = scipy.fsolve(fun, u0)
     
