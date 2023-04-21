@@ -28,6 +28,18 @@ def shooting(f, y0, T, args = None):
 
     # define the function that will be solved for the initial conditions and period
     def fun(initial_vals):
+        '''
+        Function F(u) = 0 that will be solved for the initial conditions and period
+        Parameters:
+        ----------------------------
+        initial_vals - array: the initial conditions and period guess: initial_vals = [x0, y0, ... , T]
+
+        Returns:
+        ----------------------------
+        row - array: the boundary conditions that must be satisfied for the solution to be periodic: 
+                    row = [x(T) - x0, y(T) - y0, ... , dx/dt(0) = 0]
+
+        '''
 
         # unpack the initial conditions and period guess
         T = initial_vals[-1]
