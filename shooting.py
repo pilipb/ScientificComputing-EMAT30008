@@ -36,8 +36,6 @@ def shooting(f, y0, T, args = None):
         T = initial_vals[-1]
         y0 = initial_vals[:-1] 
 
-        # if the period decreases its likely that the solution found is the wrong solution
-
         Y , _ = solve_to(f, y0, 0, T, 0.01, 'RK4', args=args)
 
         num_dim = len(y0)
@@ -58,7 +56,8 @@ def shooting(f, y0, T, args = None):
     sol = scipy.fsolve(fun, y0)
 
     # return the period and initial conditions that cause the limit cycle: sol = [x0, y0, ... , T]
-    return sol
+    return sol[:-1], sol[-1]
+
 
 
 #### TEST ####
