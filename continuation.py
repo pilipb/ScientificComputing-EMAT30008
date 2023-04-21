@@ -20,7 +20,7 @@ the new parameter value using the previous solution as the initial conditions
 
 
 # # define a natural parameter continuation function
-def nat_continuation(f, u0, plim, T, *args):
+def nat_continuation(f, u0, plim, T, *args, plot = True):
     '''
     Function will implement a natural parameter continuation method to find the solution to the ODE f
     and the parameter value p that defines a limit cycle.
@@ -51,8 +51,9 @@ def nat_continuation(f, u0, plim, T, *args):
     # store the solutions
     T_list = []
 
-    # plot the solutions on two plots
-    fig, ax = plt.subplots(1, 2)
+    if plot == True:
+        # plot the solutions on two plots
+        fig, ax = plt.subplots(1, 2)
 
     # plist
     p_list = np.arange(plim[0], plim[1], 0.1)
@@ -68,24 +69,25 @@ def nat_continuation(f, u0, plim, T, *args):
         # plot the solution
         y,t = solve_to(hopf_bifurcation, u0, 0, T1, 0.01, 'RK4', (p0,))
 
-        # on one plot, plot the y1 vs y2 phase plot
-        ax[0].plot(y[:,0], y[:,1])
+        if plot == True:
+            # on one plot, plot the y1 vs y2 phase plot
+            ax[0].plot(y[:,0], y[:,1])
         
         # store the solution
         T_list.append(T1)
 
+    if plot == True:
+        # plot the period vs the parameter value
+        ax[1].plot(np.arange(plim[0], plim[1], 0.1), T_list)
 
-    # plot the period vs the parameter value
-    ax[1].plot(np.arange(plim[0], plim[1], 0.1), T_list)
-
-    # show and label the plots
-    ax[0].set_xlabel('y1')
-    ax[0].set_ylabel('y2')
-    ax[0].set_title('Phase Plot')
-    ax[1].set_xlabel('p')
-    ax[1].set_ylabel('T')
-    ax[1].set_title('Period vs Parameter')
-    fig.show()
+        # show and label the plots
+        ax[0].set_xlabel('y1')
+        ax[0].set_ylabel('y2')
+        ax[0].set_title('Phase Plot')
+        ax[1].set_xlabel('p')
+        ax[1].set_ylabel('T')
+        ax[1].set_title('Period vs Parameter')
+        fig.show()
 
     return T_list, p_list
 
@@ -117,5 +119,5 @@ plim = [0, 2]
 T = 2*np.pi
 
 # use the natural parameter continuation method to find the solution
-nat_continuation(hopf_bifurcation, u0, plim, T)
+T, p = nat_continuation(hopf_bifurcation, u0, plim, T, plot=True)
 
