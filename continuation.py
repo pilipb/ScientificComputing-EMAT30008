@@ -1,7 +1,7 @@
 from solve_to import *
 from solvers import *
 from shooting import shooting
-from test_shoot import test_shooting
+# from test_shoot import test_shooting
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize as scipy
@@ -58,26 +58,26 @@ def nat_continuation(f, u0, plim, T, *args, plot = True):
         Y1, T1 = shooting(f, u0, T0, p0)
 
         # plot the solution
-        y,t = solve_to(hopf_bifurcation, u0, 0, T1, 0.01, 'RK4', p0)
+        y,t = solve_to(f, u0, 0, T1, 0.01, 'RK4', p0)
 
         if plot == True:
             # on one plot, plot the y1 vs y2 phase plot
-            ax[0].plot(y[:,0], y[:,1])
+            ax[0].plot(t, y.T)
         
         # store the solution
         T_list.append(T1)
 
     if plot == True:
         # plot the period vs the parameter value
-        ax[1].plot(np.arange(plim[0], plim[1], 0.1), T_list)
+        # ax[1].plot(np.arange(plim[0], plim[1], 0.1), T_list)
 
-        # show and label the plots
-        ax[0].set_xlabel('y1')
-        ax[0].set_ylabel('y2')
-        ax[0].set_title('Phase Plot')
-        ax[1].set_xlabel('p')
-        ax[1].set_ylabel('T')
-        ax[1].set_title('Period vs Parameter')
+        # # show and label the plots
+        # ax[0].set_xlabel('y1')
+        # ax[0].set_ylabel('y2')
+        # ax[0].set_title('Phase Plot')
+        # ax[1].set_xlabel('p')
+        # ax[1].set_ylabel('T')
+        # ax[1].set_title('Period vs Parameter')
 
         plt.show()
 
@@ -180,30 +180,34 @@ def pal_continuation(f, u0, plim, T, *args, plot = True):
 
 ### TEST
 
-# define the function to be integrated
-def hopf_bifurcation(t, Y, args):
-    try:
-        b = args[0]
-    except:
-        b = args
+# # define the function to be integrated
+# def hopf_bifurcation(t, Y, args):
+#     try:
+#         b = args[0]
+#     except:
+#         b = args
 
-    x, y = Y
-    dxdt = b*x - y - x*(x**2 + y**2)
-    dydt = x + b*y - y*(x**2 + y**2)
-    return np.array([dxdt, dydt])
+#     x, y = Y
+#     dxdt = b*x - y - x*(x**2 + y**2)
+#     dydt = x + b*y - y*(x**2 + y**2)
+#     return np.array([dxdt, dydt])
+
+def cubic(t, x, args):
+    return x**3 - x + args
 
 # define the initial conditions
-u0 = np.array([0.1, 0.1])
+# u0 = np.array([0.1, 0.1])
+u0 = 0.1
 
 # define the parameter limits
-plim = [0, 2]
+plim = [-2, 2]
 
 # define the initial guess for the period
 T = 2*np.pi
 
 # use the natural parameter continuation method to find the solution
-T, p = nat_continuation(hopf_bifurcation, u0, plim, T, plot=True)
+T, p = nat_continuation(cubic, u0, plim, T, plot=True)
 
 # use the pseudo arc length continuation method to find the solution
-T, p = pal_continuation(hopf_bifurcation, u0, plim, T, plot=True)
+# T, p = pal_continuation(hopf_bifurcation, u0, plim, T, plot=True)
 
