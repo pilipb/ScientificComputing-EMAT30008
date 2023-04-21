@@ -70,11 +70,84 @@ from solve_to import solve_to
 # solve by passing G(u0) to fsolve
 
 # IMPLEMENTATION:
+def shooting(f, u0, T, *args):
+    '''
+    Implementing a numerical shooting method to solve an ODE to find a periodic solution
+
+    Parameters
+    ----------------------------
+    f : function
+            the function to be integrated (with inputs (t, Y, *args)) in first order form of n dimensions
+    u0 : array
+            the initial conditions guess for the integration
+    T : float
+            the initial guess for the period of the solution
+    args : tuple
+            the arguments for the function f
+
+            
+    Returns
+    ----------------------------
+    u0 : array
+            the initial conditions for the integration that give a limit cycle
+    T : float
+            the period of the solution
+
+    '''
+
+    args = args[0]
+
+    def G(u0, *args):
+        '''
+        the function to be solved for the shooting method
+
+        Parameters
+        ----------------------------
+        u0 : array (u1, u2 ... T)
+                the initial conditions guess for the integration
+        args : tuple
+                the arguments for the function f
+
+        '''
+        # unpack the initial conditions
+        T = u0[-1]
+        y0 = u0[:-1]
+
+        # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
+        Y, _ = solve_to(f, y0, 0, T, 0.01, 'RK4', args=args)
+
+        # phase condition is first row of f(T, Y[-1], *args)
+        phi = f(T, Y[-1], args)[0]
+
+        # define the f(u) = 0 function
+        num_dim = len(y0)
+        row = np.zeros(num_dim)
+
+        for i in range(num_dim):
+            row[i] = Y[-1,i] - y0[i]
+
+        row = np.append(row, phi)
+
+        return row
+    
+    # make initial guess
+    u0 = np.append(u0, T)
+    
+    # solve the function using fsolve
+    u = scipy.fsolve(G, u0, args=args)
+
+    return u[:-1], u[-1]
+
+    
+
+
+### TEST ###
+
+
 
 # define the function to be integrated
 def f(t, Y, *args):
     # unpack the arguments
-    print(args)
     m, c, k, gamma, omega = args[0]
 
     # unpack the variables
@@ -87,40 +160,6 @@ def f(t, Y, *args):
     # return the derivatives
     return np.array([u1p, u2p])
  
-# define the function to be solved for the initial conditions and period
-def G(u0, *args):
-
-    # unpack the initial conditions
-    T = u0[-1]
-    u0 = u0[:-1]
-
-    # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-    Y, t = solve_to(f, u0, 0, T, 0.01, 'RK4', args=args)
-
-    # phase condition is first row of f(T, Y[-1], *args)
-    phi = f(T, Y[-1], args)[0]
-
-    # define the f(u) = 0 function
-    num_dim = len(u0)
-    row = np.zeros(num_dim)
-
-    for i in range(num_dim):
-        row[i] = Y[-1,i] - u0[i]
-
-    row = np.append(row, phi)
-
-    output = row
-
-    return output
-
-# solve the function using fsolve
-def solve_G(u0, *args):
-
-    # solve the function
-    u = scipy.fsolve(G, u0, args=args[0])
-
-    return u
-
 # define the parameters
 m = 1
 c = 1
@@ -134,19 +173,16 @@ u20 = 0
 T = 2*np.pi/omega
 
 # define the initial conditions
-u0 = np.array([u10, u20, T])
+u0 = np.array([u10, u20])
 
 # define the arguments
 args = (m, c, k, gamma, omega)
 
 # solve the function
-u = solve_G(u0, args)
-
-# unpack the solution
-u10, u20, T = u
+y0, T = shooting(f, u0, T, args)
 
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-Y, t = solve_to(f, np.array([u10, u20]), 0, T, 0.01, 'RK4', args=args)
+Y, t = solve_to(f, y0, 0, T, 0.01, 'RK4', args=args)
 
 # plot the solution
 plt.plot(t, Y[:,0])
