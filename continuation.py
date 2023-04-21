@@ -6,7 +6,7 @@ from shooting import shooting_setup
 '''
 results = continuation(myode,  # the ODE to use
     x0,  # the initial state
-    par0,  # the initial parameters
+    par0,  # the initial parameters (as a list)
     vary_par=0,  # the parameter to vary
     step_size=0.1,  # the size of the steps to take
     max_steps=100,  # the number of steps to take
@@ -20,9 +20,37 @@ results = continuation(myode,  # the ODE to use
 # x^3 - x + c = 0
 
 # natural continuation will find the roots of the equation, then increment c and find the roots again
-
 def nat_continuation(ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discret=None, solver=scipy.optimize.fsolve):
+    '''
+    Natural continuation method to increment a parameter and solve the ODE for the new parameter value
+    Parameters:
+    ----------------------------
+    ode - function: 
+            the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
+    x0 - array:
+            the initial value of the solution
+    p0 - list:
+            the initial values of the parameters
+    vary_p - int:
+            the index of the parameter to vary
+    step - float:
+            the size of the steps to take
+    max_steps - int:
+            the number of steps to take
+    discret - function:
+            the discretisation to use (either shooting_setup or linear)
+    solver - function:
+            the solver to use (either scipy.optimize.fsolve or scipy.optimize.root)
 
+    Returns:
+    ----------------------------
+    X - array:
+            the solution of the equation for each parameter value
+    C - array:
+            the parameter values that were used to solve the equation
+
+    
+    '''
     # initialize the solution
     X = []
     C = []
@@ -78,12 +106,16 @@ def linear(x, x0,T, args):
     return x , x0
 
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-X, C = nat_continuation(cubic, x0, -2, vary_p = 0, step = 0.1, max_steps = 100, discret=linear, solver=scipy.optimize.fsolve)
+X, C = nat_continuation(cubic, x0, -2, vary_p = 0, step = 0.01, max_steps = 400, discret=linear, solver=scipy.optimize.fsolve)
 
 # plot the solution
-# plt.plot(C, X)
-# plt.grid()
-# plt.show()
+plt.figure()
+plt.title('Cubic Equation')
+plt.plot(C, X)
+plt.xlabel('parameter c value')
+plt.ylabel('root value')
+plt.grid()
+plt.show()
 
 # now test natural continuation with a differential equation - Hopf bifurcation
 def hopf(t, X, *args):
@@ -99,18 +131,22 @@ def hopf(t, X, *args):
     return np.array([dxdt, dydt])
 
 # define the initial conditions
-x0 = [0.1,0.1]
+x0 = [1,5]
 
 # define parameter
-p = 0.0 
+p = 2
 
 print('second')
 
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-X, C = nat_continuation(hopf, x0, p, vary_p = 0, step = 0.1, max_steps = 20, discret=shooting_setup, solver=scipy.optimize.fsolve)
+X, C = nat_continuation(hopf, x0, p, vary_p = 0, step = -0.1, max_steps = 40, discret=shooting_setup, solver=scipy.optimize.fsolve)
 
 # plot the solution
+plt.figure()
+plt.title('Hopf Bifurcation')
 plt.plot(C, X)
+plt.xlabel('parameter b value')
+plt.ylabel('root value')
 plt.grid()
 plt.show()
 
