@@ -26,9 +26,6 @@ def shooting(f, y0, T, args = None):
 
     '''
 
-    # unpack the initial conditions and period guess
-    T_guess = T
-
     # define the function that will be solved for the initial conditions and period
     def fun(initial_vals):
 
@@ -50,13 +47,16 @@ def shooting(f, y0, T, args = None):
 
         return row
 
-    # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-    y0 = np.append(y0, T_guess)
+    # solve the system of equations for the initial conditions [x0, y0, ... ,T] that satisfy the boundary conditions
+    u0 = np.append(y0, T)
 
-    sol  = scipy.fsolve(fun, y0)
+    sol  = scipy.fsolve(fun, u0)
     
     # return the period and initial conditions that cause the limit cycle: sol = [x0, y0, ... , T]
-    return sol
+    u0 = sol[:-1]
+    T = sol[-1]
+
+    return u0, T
 
 
 
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     # define new ode
     a = 1
     d = 0.1
-    b = 0.4
+    b = 0.25
 
     def ode(t, Y, args):
 
@@ -94,18 +94,14 @@ if __name__ == '__main__':
     T = 20
     
     # solve the ode using the shooting method
-    sol = shooting(ode, Y0, T, args=[a,b,d])
-
-#    extract the period and initial conditions
-    T = sol[-1]
-    Y0 = sol[:-1]
+    u0, T0 = shooting(ode, Y0, T, args=[a,b,d])
 
     # solve for one period of the solution
-    Y,t = solve_to(ode, Y0, 0, T, 0.01, 'RK4', args=[a,b,d])
+    Y,t = solve_to(ode, u0, 0, T0, 0.01, 'RK4', args=[a,b,d])
 
     plt.plot(t, Y)
     plt.xlabel('t')
     plt.ylabel('x(t) and y(t)')
-    plt.title('Period = %.2f' %T)
+    plt.title('Period = %.2f' %T0)
     plt.show()
         
