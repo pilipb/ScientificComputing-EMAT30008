@@ -41,22 +41,23 @@ def shooting(f, y0, T, args = None):
         num_dim = len(y0)
         row = np.zeros(num_dim)
 
-
-        for i in range(num_dim):
-            row[i] = Y[-1,i] - y0[i]
+        row = Y[-1,:] - y0
   
-        row = np.append(row, f(T, Y[-1], args=args)[0])
+        row = np.append(row, f(0, Y[0], args)[0])
 
-        output = np.array(row)
-        return output
+        return row
 
     # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
     y0 = np.append(y0, T_guess)
 
-    sol = scipy.fsolve(fun, y0)
-
+    sol  = scipy.fsolve(fun, y0, full_output=True)
+    x = sol[0]
+    mesg = sol[-1]
+    
+    print(mesg)
+    
     # return the period and initial conditions that cause the limit cycle: sol = [x0, y0, ... , T]
-    return sol[:-1], sol[-1]
+    return x[:-1], x[-1]
 
 
 
@@ -72,15 +73,13 @@ if __name__ == '__main__':
     # define new ode
     a = 1
     d = 0.1
-    b = 0.1
+    b = 0.3
 
     def ode(t, Y, args):
 
         a, b, d = args
+        x,y = Y
 
-        Y = np.array(Y)
-
-        x, y = Y
         return np.array([x*(1-x) - (a*x*y)/(d+x) , b*y*(1- (y/x))])
 
 
@@ -90,17 +89,15 @@ if __name__ == '__main__':
     '''
 
     # initial guess
-    Y0 = [10,10]
+    Y0 = [0.1,0.1]
+    T = 20
     
     # solve the ode using the shooting method
-    sol = shooting(ode, Y0, 60, args=[a,b,d])
+    sol = shooting(ode, Y0, T, args=[a,b,d])
 
 #    extract the period and initial conditions
     T = sol[-1]
     Y0 = sol[:-1]
-
-    print('Period = %.2f' %T, '\n')
-    print('Y0 = ', Y0, '\n')
 
     # solve for one period of the solution
     Y,t = solve_to(ode, Y0, 0, T, 0.01, 'RK4', args=[a,b,d])
