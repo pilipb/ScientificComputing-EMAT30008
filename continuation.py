@@ -41,6 +41,10 @@ def nat_continuation(f, u0, plim, T, *args):
 
     Returns
     ----------------------------
+    T_list : list
+            a list of the periods for the solutions found for each parameter value
+    p_list : list
+            a list of the parameter values used to find the solutions
     
     '''
 
@@ -50,8 +54,11 @@ def nat_continuation(f, u0, plim, T, *args):
     # plot the solutions on two plots
     fig, ax = plt.subplots(1, 2)
 
+    # plist
+    p_list = np.arange(plim[0], plim[1], 0.1)
 
-    for p0 in np.arange(plim[0], plim[1], 0.1):
+
+    for p0 in p_list:
 
         # find the shooting solution for the initial parameter value
         T0 = T
@@ -78,8 +85,9 @@ def nat_continuation(f, u0, plim, T, *args):
     ax[1].set_xlabel('p')
     ax[1].set_ylabel('T')
     ax[1].set_title('Period vs Parameter')
-    plt.show()
-    return T_list
+    fig.show()
+
+    return T_list, p_list
 
 
 
@@ -109,5 +117,5 @@ plim = [0, 2]
 T = 2*np.pi
 
 # use the natural parameter continuation method to find the solution
-T_list = nat_continuation(hopf_bifurcation, u0, plim, T)
+nat_continuation(hopf_bifurcation, u0, plim, T)
 
