@@ -27,7 +27,7 @@ def shooting_setup(f, y0, T= 0, args = None):
     '''
 
     # define the function that will be solved for the initial conditions and period
-    def fun(initial_vals):
+    def fun(initial_vals,p):
         '''
         Function F(u) = 0 that will be solved for the initial conditions and period
         Parameters:
@@ -81,13 +81,14 @@ def shooting_solve(fun, u0):
     
     '''
 
-    sol  = scipy.fsolve(fun, u0)
+    sol  = scipy.fsolve(fun, u0, args = (0,))
     
     # return the period and initial conditions that cause the limit cycle: sol = [x0, y0, ... , T]
     u0 = sol[:-1]
     T = sol[-1]
 
     return u0, T
+
 
 
 
