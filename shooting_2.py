@@ -73,95 +73,128 @@ Explanation of the shooting method:
 
 '''
 
+class Shooting():
 
-def shooting_setup(f, u0, T, *args):
-    '''
-    Implementing a numerical shooting method to set up the function F(u) to be solved for the limit cycle initial conditions
+    def __init__(self, f, u0, T, *args, pal=False):
+        '''
+        Initialising the shooting method
 
-    Parameters
-    ----------------------------
-    f : function
-            the function to be integrated (with inputs (t, Y, *args)) in first order form of n dimensions
-    u0 : array
-            the initial conditions guess for the integration
-    T : float
-            the initial guess for the period of the solution
-    args : tuple
-            the arguments for the function f
-            
-    Returns
-    ----------------------------
-    F(u) : array 
-            the array to be solved that finds the initial conditions for the limit cycle
+        Parameters
+        ----------------------------
+        f : function
+                the function to be integrated (with inputs (t, Y, *args)) in first order form of n dimensions
+        u0 : array
+                the initial conditions guess for the integration
+        T : float
+                the initial guess for the period of the solution
+        args : tuple
+                the arguments for the function f
+        pal : bool
+                whether to use a pseudo arclength continuation method to solve the shooting method
 
-    '''
-    # unpack the arguments
-    args = args[0]
-
-    # unpack the initial conditions
-    T = u0[-1]
-    y0 = u0[:-1]
-
-    # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-    Y, _ = solve_to(f, y0, 0, T, 0.01, 'RK4', args=args)
-
-    # phase condition is first row of f(T, Y[-1], *args)
-    phi = f(T, Y[-1], args)[0]
-
-    # define the f(u) = 0 function
-    num_dim = len(y0)
-    row = np.zeros(num_dim)
-
-    for i in range(num_dim):
-        row[i] = Y[-1,i] - y0[i]
-
-    row = np.append(row, phi)
-
-    return row
-
-def pal_setup(G, f, u0, u1, T, *args):
-
-    '''
-    Adds the pseudo arclength continuation equation to the shooting method setup
-
-    Parameters
-    ----------------------------
-    G : array
-            G(u) = 0 from the shooting method setup
-    f : function
-            the function to be integrated (with inputs (t, Y, *args)) in first order form of n dimensions
-    u0 : array
-            the initial conditions guess for the integration
-    u1 : array
-            a second initial conditions guess for the integration
-    T : float
-            the initial guess for the period of the solution
-    args : tuple
-            the arguments for the function f
-
-
-    Returns
-    ----------------------------
-    G : array 
-            the array to be solved that finds the initial conditions for the limit cycle
-            in a pseudo arclength continuation method
-
-    '''
-
-
+        '''
+        self.f = f
+        self.u0 = u0
+        self.T = T
+        self.args = args[0]
 
     
+    def shooting_setup(self):
+        '''
+        Implementing a numerical shooting method to set up the function F(u) to be solved for the limit cycle initial conditions
+
+        Parameters
+        ----------------------------
+        self
+
+        f : function
+                the function to be integrated (with inputs (t, Y, *args)) in first order form of n dimensions
+        u0 : array
+                the initial conditions guess for the integration
+        T : float
+                the initial guess for the period of the solution
+        args : tuple
+                the arguments for the function f
+                
+        Returns
+        ----------------------------
+        F(u) : array 
+                the array to be solved that finds the initial conditions for the limit cycle
+
+        '''
+
+        # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
+        Y, _ = solve_to(self.f, self.u0, 0, self.T, 0.01, 'RK4', args=self.args)
+
+        # phase condition is first row of f(T, Y[-1], *args)
+        phi = self.f(self.T, Y[-1], self.args)[0]
+
+        # define the f(u) = 0 function
+        num_dim = len(self.u0)
+        row = np.zeros(num_dim)
+
+        for i in range(num_dim):
+            row[i] = Y[-1,i] - self.u0[i]
+
+        G = np.append(row, phi)
+
+        self.G = G
+
+        if self.pal == True:
+            G = self.pal_setup(G, self.f, self.u0, Y[-1], self.u2, self.T, self.step, self.args)
+
+        return G
+
+    def pal_setup(self, G, f, u0, u1, u2, T, step, *args):
+
+        '''
+        Adds the pseudo arclength continuation equation to the shooting method setup
+
+        Parameters
+        ----------------------------
+        G : array
+                G(u) = 0 from the shooting method setup
+        f : function
+                the function to be integrated (with inputs (t, Y, *args)) in first order form of n dimensions
+        u0 : array
+                the initial conditions for the integration
+        u1 : array
+                a second initial conditions for the integration
+        u2 : array
+                a guess for the third point in the secant line
+        T : float
+                the initial guess for the period of the solution
+        args : tuple
+                the arguments for the function f
 
 
-# make initial guess
-u0 = np.append(u0, T)
+        Returns
+        ----------------------------
+        G : array 
+                the array to be solved that finds the initial conditions for the limit cycle
+                in a pseudo arclength continuation method
 
-# solve the function using fsolve
-u = scipy.fsolve(G, u0, args=args)
+        '''
 
-# u[:-1], u[-1]
+        # create secant line
+        delta = u1 - u0
 
-    
+        # define a prediction
+        u2_p = u1 + step * delta
+
+        # u2 is what we want to solve for in this equation
+        pal_eq = np.dot(u2 -  u2_p , delta) 
+
+        G = np.append(G, pal_eq)
+
+        return G
+
+
+    def shooting_solve(G):
+
+        # 
+
+
 
 
 ### TEST ###
