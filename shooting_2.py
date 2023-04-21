@@ -74,7 +74,7 @@ from solve_to import solve_to
 # define the function to be integrated
 def f(t, Y, *args):
     # unpack the arguments
-    # print(args)
+    print(args)
     m, c, k, gamma, omega = args[0]
 
     # unpack the variables
@@ -89,31 +89,27 @@ def f(t, Y, *args):
  
 # define the function to be solved for the initial conditions and period
 def G(u0, *args):
-    # args in the form of (m, c, k, gamma, omega), (A, B)
-    # unpack the arguments
-    coeff = args[0][0]
-
-    bounds = args[0][1]
-    A, B = bounds
 
     # unpack the initial conditions
-    u10, u20, T = u0
-
-    # define the initial conditions
-    u0 = np.array([u10, u20])
+    T = u0[-1]
+    u0 = u0[:-1]
 
     # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-    Y, t = solve_to(f, u0, 0, T, 0.01, 'RK4', args=coeff)
+    Y, t = solve_to(f, u0, 0, T, 0.01, 'RK4', args=args)
 
     # phase condition is first row of f(T, Y[-1], *args)
-    phi = f(T, Y[-1], coeff)[0]
-    
-    # define the boundary conditions
-    u1A = Y[0,1]
-    u1B = Y[-1,1]
+    phi = f(T, Y[-1], args)[0]
 
-    # define the function to be solved
-    output = np.array([u1A - A, u1B - B, phi])
+    # define the f(u) = 0 function
+    num_dim = len(u0)
+    row = np.zeros(num_dim)
+
+    for i in range(num_dim):
+        row[i] = Y[-1,i] - u0[i]
+
+    row = np.append(row, phi)
+
+    output = row
 
     return output
 
@@ -121,7 +117,7 @@ def G(u0, *args):
 def solve_G(u0, *args):
 
     # solve the function
-    u = scipy.fsolve(G, u0, args=args)
+    u = scipy.fsolve(G, u0, args=args[0])
 
     return u
 
@@ -132,10 +128,6 @@ k = 1
 gamma = 1
 omega = 1
 
-# define the boundary conditions
-A = 0
-B = 0
-
 # define the initial conditions
 u10 = 0
 u20 = 0
@@ -145,7 +137,7 @@ T = 2*np.pi/omega
 u0 = np.array([u10, u20, T])
 
 # define the arguments
-args = [m, c, k, gamma, omega], [A, B]
+args = (m, c, k, gamma, omega)
 
 # solve the function
 u = solve_G(u0, args)
@@ -154,7 +146,7 @@ u = solve_G(u0, args)
 u10, u20, T = u
 
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-Y, t = solve_to(f, np.array([u10, u20]), 0, T, 0.01, 'RK4', args=args[0])
+Y, t = solve_to(f, np.array([u10, u20]), 0, T, 0.01, 'RK4', args=args)
 
 # plot the solution
 plt.plot(t, Y[:,0])
