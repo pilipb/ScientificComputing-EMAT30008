@@ -41,35 +41,39 @@ import matplotlib.pyplot as plt
 import scipy.optimize as scipy
 import math
 from solve_to import solve_to
+'''
+Explanation of the shooting method:
 
-# consider the ode:
-# mx¨ + cx˙ + kx = gamma sin(ωt)
+    consider the ode:
+    mx¨ + cx˙ + kx = gamma sin(ωt)
 
-# T = 2π/omega
+    T = 2π/omega
 
-# in first order form:
-# u1' = u2
-# u2' = 1/m (-c u2 - k u1 + gamma sin(ωt))
+    in first order form:
+    u1' = u2
+    u2' = 1/m (-c u2 - k u1 + gamma sin(ωt))
 
-# the time solution is:
+    the time solution is:
 
-# u(t) = [u1(t), u2(t)] = F(t, u0) (where F is the integration of u with the initial conditions u0, up to time t)
+    u(t) = [u1(t), u2(t)] = F(t, u0) (where F is the integration of u with the initial conditions u0, up to time t)
 
-# the limit cycle is when u0 - u(T) = 0 for some u0
+    the limit cycle is when u0 - u(T) = 0 for some u0
 
-# u0 - F(T, u0) = 0
+    u0 - F(T, u0) = 0
 
-# ie: solving the root for G(u0) = 0, where G(u0) = u0 - F(T, u0)
+    ie: solving the root for G(u0) = 0, where G(u0) = u0 - F(T, u0)
 
-# for autonomous systems, G(u0) = [u0 - F(T, u0), phi(0)] = 0 where phi(0) is the phase condition at time 0
+    for autonomous systems, G(u0) = [u0 - F(T, u0), phi(0)] = 0 where phi(0) is the phase condition at time 0
 
-# the phase condition is the x derivative of the solution at time t
+    the phase condition is the x derivative of the solution at time t
 
-# phi(t) = u1' = u2
+    phi(t) = u1' = u2
 
-# solve by passing G(u0) to fsolve
+    solve by passing G(u0) to fsolve
 
-# IMPLEMENTATION:
+'''
+
+
 def shooting(f, u0, T, *args):
     '''
     Implementing a numerical shooting method to solve an ODE to find a periodic solution
@@ -94,7 +98,7 @@ def shooting(f, u0, T, *args):
             the period of the solution
 
     '''
-
+    # unpack the arguments
     args = args[0]
 
     def G(u0, *args):
