@@ -29,10 +29,6 @@ def shooting(f, y0, T, args = None):
     # unpack the initial conditions and period guess
     T_guess = T
 
-    # define the find dx/dt function
-    def dxdt(t, Y, f=f):
-        return f(t, Y, args=args)[0]
-
     # define the function that will be solved for the initial conditions and period
     def fun(initial_vals):
 
@@ -51,7 +47,7 @@ def shooting(f, y0, T, args = None):
         for i in range(num_dim):
             row[i] = Y[-1,i] - y0[i]
   
-        row = np.append(row, dxdt(T, Y[-1]))
+        row = np.append(row, f(T, Y[-1], args=args)[0])
 
         output = np.array(row)
         return output
