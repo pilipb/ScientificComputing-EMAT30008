@@ -84,8 +84,12 @@ def nat_continuation(f, u0, plim, T, *args, plot = True):
     return T_list, p_list
 
 
+
+########## BELOW IS THE PSEUDO ARC LENGTH CONTINUATION METHOD ##########
+
+
 # define a pseudo arc length continuation function
-def pal_continuation(f, u0, u1, T, *args, plot = True):
+def pal_continuation(f, u0, plim, T, *args, plot = True):
     '''
     Pseudo arc length continuation method to find the solution to the ODE f for varying parameter value p
 
@@ -130,13 +134,14 @@ def pal_continuation(f, u0, u1, T, *args, plot = True):
     '''
     # store the solutions
     T_list = []
+    p_list = []
 
     if plot == True:
         # plot the solutions on two plots
         fig, ax = plt.subplots(1, 2)
 
     # plist
-    p_list = np.arange(plim[0], plim[1], 0.1)
+    p0 = plim[0]
 
 
     while p0 < plim[1]:
@@ -144,7 +149,7 @@ def pal_continuation(f, u0, u1, T, *args, plot = True):
         # find the shooting solution for the initial parameter value
         T0 = T
 
-        Y1, T1 = test_shooting(f, u0, T0, p0)
+        Y1, T1, p0 = test_shooting(f, u0, T0, p0)
 
         # plot the solution
         y,t = solve_to(hopf_bifurcation, u0, 0, T1, 0.01, 'RK4', p0)
@@ -155,6 +160,7 @@ def pal_continuation(f, u0, u1, T, *args, plot = True):
         
         # store the solution
         T_list.append(T1)
+        p_list.append(p0)
 
     if plot == True:
         # plot the period vs the parameter value
@@ -171,16 +177,6 @@ def pal_continuation(f, u0, u1, T, *args, plot = True):
         plt.show()
 
     return T_list, p_list
-
-
-
-
-
-
-
-
-
-
 
 ### TEST
 
@@ -207,4 +203,7 @@ T = 2*np.pi
 
 # use the natural parameter continuation method to find the solution
 T, p = nat_continuation(hopf_bifurcation, u0, plim, T, plot=True)
+
+# use the pseudo arc length continuation method to find the solution
+T, p = pal_continuation(hopf_bifurcation, u0, plim, T, plot=True)
 
