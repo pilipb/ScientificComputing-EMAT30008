@@ -4,70 +4,185 @@ from numpy.linalg import solve
 import numpy as np
 import matplotlib.pyplot as plt
 
+class ODE():
+    '''
+    Class to store the parameters of the ODE
+    '''
+    def __init__(self, m, c, k, q, bound_type, alpha, beta, a, b, *args):
+        '''
+        Second order ODE of the form:
+        m*u'' + c*u' + k * q(x,u,args) = 0
 
-# define the parameters
-D = 1
-alpha = 0
-beta = 0
-a = 0
-b = 1
-N = 10
-bound_type = 'DD'
+        Parameters
+        ----------
+        m : float
+            2nd order coefficient.
+        c : float
+            1st order coefficient.
+        k : float
+            0th order coefficient.
+        q : function
+            Function of x and u. (source term)
+        bound_type : string
+            The type of boundary condition: DD, DN, DR, ND, NN, NR, RD, RN, RR (Dirichlet, Neumann, Robin)
+        alpha : float
+            The left boundary condition.
+        beta : float
+            The right boundary condition.
+        a : float
+            The left edge of the domain.
+        b : float
+            The right edge of the domain.
+        args: tuple
+            The arguments for the function q(x,u,args)
 
-# define the method and boundary condition
-method = 'scipy'
+        '''
+        self.m = m
+        self.c = c
+        self.k = k
+        self.q = q
+        self.bound_type = bound_type
+        self.alpha = alpha
+        self.beta = beta
+        self.a = a
+        self.b = b
+        self.args = args
 
-# define the function q
-def q(x_int, u, *args):
-    myu = args[0]
-    return np.exp(myu*u)
+class Solver():
+    def __init__(self, ODE, N, method):
+        '''
+        Class to solve the ODE
 
-args = (4,)
+        Parameters
+        ----------
+        ODE : ODE object
+            The ODE object to be solved.
+        N : int
+            The number of interior points.
+        method : string
+            The method to solve the ODE: .
 
-# create the grid
-x = np.linspace(a, b, N+1)
-x_int = x[1:-1] # interior points
-dx = (b-a)/N
+        '''
 
-# define an initial guess for the solution
-u = np.zeros(N-1)
+        self.ODE = ODE
+        self.N = N
+        self.method = method
 
-# use boundary functions to define the boundary conditions (for interior points)
-A_mat, b_vec = boundary(alpha, beta, N, dx, bound_type)
+        # create the grid
+        self.x = np.linspace(ODE.a, ODE.b, N+1)
+        self.x_int = self.x[1:-1] # interior points
+        self.dx = (ODE.b-ODE.a)/N
 
-# define the vector q as a function of u but length N-1
-def mak_q(u):
-    if callable(q):
-        # make a vector of length x_int, and width 1 with q(x,u,args) for each x in x_int
-        q_vec = q(x_int, u, *args)
+        # create the matrix A and vector b
+        self.A_mat, self.b_vec = boundary(ODE.alpha, ODE.beta, N, self.dx, ODE.bound_type)
 
-        return q_vec
-    else:
-        return q * np.ones(N-1)
+        # define an initial guess for the solution
+        self.u = np.zeros(N-1)
+
+    def solve(self):
+        '''
+        Solve the ODE
+        '''
+
+        if self.method == 'scipy':
+            u = self.scipy_solve()
+        elif self.method == 'numpy':
+            u = self.numpy_solve()
+
+        return u
     
-# solve the linear system
-if method == 'scipy': # use SciPy root - use when q is a function of u
-    # define the function f(u) = 0
-    def f(u):
-        return D*A_mat@u + b_vec + mak_q(u)
-    # solve the system
-    sol = root(f, u)
+    def q_vector(self, x, u, *args):
+        '''
+        Makes a q vector for the ODE
 
-    if not sol.success:
-        raise ValueError('The solution did not converge')
+        Returns
+        -------
+        q_vec : np.array
+            The q vector for the ODE
+        '''
+        # define the vector q as a function of u but length N-1
+        if callable(self.ODE.q):
+            # make a vector of length x_int, and width 1 with q(x,u,args) for each x in x_int
+            q_vec = self.ODE.q(x, u, *args)
+            return q_vec
+        
+        # if q is a constant
+        else:
+            return self.ODE.q * np.ones(self.N-1)
     
-    u = sol.x
 
-# add the boundary conditions to the solution
-u = np.concatenate(([alpha], u, [beta]))
+    def scipy_solve(self):    
+        '''
+        solves the ODE using scipy root function
+
+        Returns
+        -------
+        u : np.array
+            The solution to the ODE
+        
+        '''
+        # define the function to be solved
+        def f(u):
+            return -self.A_mat @ u + self.b_vec + self.q_vector(self.x_int, u, *self.ODE.args)
+        
+        # solve the function
+        sol = root(f, self.u)
+
+        # check if the solution converged
+        if not sol.success:
+            raise ValueError(sol.message)
+
+        u = sol.x
+
+        # concatenate the boundary conditions
+        u = np.concatenate(([self.ODE.alpha], -u, [self.ODE.beta]))
+
+        return u
+    
+
+    
+    ##### test functions #####
+
+if __name__ == '__main__':
+
+    # define the ODE
+    m = 1
+    c = 0
+    k = 1
+    q = lambda x, u, *args: 1
+    bound_type = 'DD'
+    alpha = 0
+    beta = 0
+    a = 0
+    b = 1
+    args = (4,)
+
+    # create the ODE object
+    ODE = ODE(m, c, k, q, bound_type, alpha, beta, a, b, *args)
+
+    # create the solver object
+    N = 10
+    method = 'scipy'
+    solver = Solver(ODE, N, method)
+
+    # solve the ODE
+    u = solver.solve()
+
+    # extract the grid
+    x = solver.x
+
+    
 
 
 
-# plot the solution
-plt.plot(x, u, 'o-')
-plt.xlabel('x')
-plt.ylabel('u')
-plt.show()
+
+
+
+    # plot the solution
+    plt.plot(x, u, 'o-')
+    plt.xlabel('x')
+    plt.ylabel('u')
+    plt.show()
 
 
 
