@@ -254,7 +254,13 @@ class Solver():
         # loop over the steps
         for n in range(0, self.N_time):
 
-            u[n+1,:] = np.linalg.solve(A, b[-1,:]) + self.dt * self.PDE.q(self.x_int, self.t[n], u[n,:], *self.PDE.args)
+            if callable(self.PDE.q):
+                # calculate the source term
+                qval = self.PDE.q(self.x_int, self.t[n], u[n,:], *self.PDE.args)
+            else:
+                qval = self.PDE.q
+
+            u[n+1,:] = np.linalg.solve(A, b[-1,:]) + self.dt * qval
 
             # update the boundary conditions
             u[n+1,0] = alpha
@@ -307,14 +313,49 @@ class Solver():
 
         return u
     
-
-  
+def profile(PDE, N, t_final, plot = True):
+    '''
+    return the profile of the solvers using cProfile
     
+    '''
+    import cProfile
+    import pstats
+
+    stats = []
+
+    # loop through methods and profile
+    for method in ['Euler', 'RK4', 'Heun','implicit_euler', 'crank_nicolson', 'imex_euler']:
+
+        # profile the function
+        pr = cProfile.Profile()
+        pr.enable()
+        # make solver object
+        solver = Solver(PDE, N, t_final, method)
+        u = solver.solve()
+        pr.disable()
+        
+        # get the stats
+        ps = pstats.Stats(pr).sort_stats('tottime')
+        stats.append(ps)
+
+    # plot the performance results
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    if plot:
+        # plot the results as a bar chart
+        fig, ax = plt.subplots(1,1, figsize = (10,5))
+        ax.set_title('Performance of different solvers')
+        ax.set_ylabel('Time (s)')
+        ax.set_xlabel('Solver')
+        ax.set_xticks(np.arange(0,6))
+        ax.set_xticklabels(['Euler', 'RK4', 'Heun', 'Implicit Euler', 'Crank-Nicolson', 'IMEX Euler'])
+        ax.bar(np.arange(0,6), [s.total_tt for s in stats])
+        plt.show()
+
+    return stats
 
 
-    
-
-    
 
 
         
@@ -326,8 +367,8 @@ if __name__ == '__main__':
     # define the ODE
     m = 0.01
 
-    q = lambda x, t, u, *args: np.exp(args[0] * u)
-    # q = 0
+    # q = lambda x, t, u, *args: np.exp(args[0] * u)
+    q = 0
     bound_type = 'DD'
     alpha = 0
     beta = 0
@@ -339,24 +380,40 @@ if __name__ == '__main__':
     # create the PDE object
     pde = PDE(f, m, q, bound_type, alpha, beta, a, b, *args)
 
-    # create the solver object
-    N = 100
-    method = 'explicit_euler'
-    t_final = 0.01
-    solver = Solver(pde, N, t_final, method, CFL=0.6)
+    # # create the solver object
+    # N = 100
+    # method = 'explicit_euler'
+    # t_final = 0.01
+    # solver = Solver(pde, N, t_final, method, CFL=0.6)
 
-    # solve the ODE
-    u = solver.solve()
+    # # solve the ODE
+    # u = solver.solve()
 
-    # extract the grid
-    x = solver.x
+    # # extract the grid
+    # x = solver.x
 
-    # plot the solution at 3 different times
-    for n in np.linspace(0, len(solver.t)-1, 10, dtype = int):
-        plt.plot(x, u[:,n], label = 't = {}'.format(solver.t[n]))
+    # # plot the solution at 3 different times
+    # for n in np.linspace(0, len(solver.t)-1, 10, dtype = int):
+    #     plt.plot(x, u[:,n], label = 't = {}'.format(solver.t[n]))
 
-    plt.legend()
-    plt.show()
+    # plt.legend()
+    # plt.show()
+
+    # profile the solvers
+    stats = profile(pde, 100, 0.01, plot = False)
+
+    # for each solver, print the top 10 functions
+    for s in stats:
+        s.print_stats(10)
+        
+ 
+    
+
+    
+
+
+
+
 
 
         
