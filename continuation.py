@@ -63,7 +63,7 @@ def nat_continuation(ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discr
     param = p0
 
 
-    T = 0
+    T = 10
 
 
     # check that the discret either a lambda function or a function
@@ -176,16 +176,16 @@ def ode(t, Y, args):
     return np.array([dxdt, dydt])
 
 # define the initial conditions
-x0 = [0,np.pi]
+x0 = [1, 1]
 
 # define parameter
-myu, omega = -1, 2*np.pi
+myu, omega = -1, 0.01
 p = [myu, omega]
 
 print('\nSecond example: Hopf Bifurcation with shooting discretisation')
 
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-X, C = nat_continuation(hopf_polar, x0, p, vary_p = 0, step = 0.2, max_steps = 10, discret=shooting_setup, solver=scipy.optimize.fsolve)
+X, C = nat_continuation(hopf_polar, x0, p, vary_p = 0, step = 0.01, max_steps = 150, discret=shooting_setup, solver=scipy.optimize.fsolve)
 
 # split the X into x, y and period at each parameter value
 print('\nX = ', X)
@@ -198,9 +198,9 @@ print('\nT = ', T)
 
 # plot the period
 plt.figure()
-plt.title('Hopf Bifurcation')
+plt.title('Polar Hopf Bifurcation')
 plt.plot(C, T)
-plt.xlabel('parameter b value')
+plt.xlabel('parameter myu value')
 plt.ylabel('period value')
 plt.grid()
 plt.show()
