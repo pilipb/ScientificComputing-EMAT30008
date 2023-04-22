@@ -1,7 +1,7 @@
 import scipy.optimize
 import numpy as np
 import matplotlib.pyplot as plt
-from shooting import shooting_setup
+from shooting import Discretisation
 from solve_to import solve_to
 
 '''
@@ -19,7 +19,7 @@ results = continuation(myode,  # the ODE to use
     
     '''
 class Continuation:
-    def __init__(self, solver):
+    def __init__(self, solver=scipy.optimize.root):
         '''
         Continuation class to solve ODEs and algebraic equations for finding roots in a parameter space
 
@@ -50,7 +50,7 @@ class Continuation:
         max_steps - int:
                 the number of steps to take
         discret - function:
-                the discretisation to use (either shooting_setup or linear)
+                the discretisation to use (either shooting_setup or linear (if None))
 
         Returns:
         ----------------------------
@@ -72,26 +72,35 @@ class Continuation:
         to make the F(x) = 0 that will be solved by the solver
         
         '''
+
         param = p0
-
-
         T = 10
 
+        # if no discretisation is given, use the linear discretisation
+        if discret is None:
+            discret = Discretisation().linear
 
-        # check that the discret either a lambda function or a function
+        # check that the discretisation is a function
         if not callable(discret):
-            raise ValueError("discretisation must be a function or lambda function")
-        
-        fun = discret(ode, x0, T=T, args = param )
-        if discret == shooting_setup:
+            raise TypeError('discretation must be a function or None')
+
+        # discretise the ode - creating the function that will be solved F(x) = 0
+        fun = discret(ode, x0, T=T, args = param)
+
+        if discret == Discretisation().shooting_setup:
             u0 = np.append(x0, T)
         else:
             u0 = x0
 
+        # solve the discretised equation
         sol = self.solver(fun, u0, args = (param,))
 
         # append the solution
-        X.append(sol)
+        try:
+            X.append(sol.x)
+        except:
+            X.append(sol)
+
         try:
             C.append(param[vary_p])
         except:
@@ -105,9 +114,11 @@ class Continuation:
             except:
                 param+=step
 
-            sol = self.solver(fun, u0, args = (param))
-
-            X.append(sol)
+            sol = self.solver(fun, u0, args = (param,))
+            try:
+                X.append(sol.x)
+            except:
+                X.append(sol)
 
             try:
                 C.append(param[vary_p])
@@ -120,107 +131,109 @@ class Continuation:
 
 
 
-
-
 ####################### EXAMPLES ############################
+if __name__ == '__main__':
+    # define the cubic equation
+    def cubic(x, *args):
+        
+        c = args
+        return x**3 - x + c
 
-# define the cubic equation
-def cubic(x, *args):
-    
-    c = args
-    return x**3 - x + c
+    # define the initial conditions
+    x0 = 1
 
-# define the initial conditions
-x0 = 1
+    # define the linear discretisation
+    def linear(x, x0, T, args):
+        return x 
 
-# define the linear discretisation
-def linear(x, x0, T, args):
-    return x 
+    print('\nFirst example: cubic equation with linear discretisation')
 
-print('\nFirst example: cubic equation with linear discretisation')
+    cont = Continuation()
+    discret = Discretisation()
 
-cont = Continuation(solver=scipy.optimize.fsolve)
+    # natural continuation with no discretisation
+    X, C = cont.nat_continuation(cubic, x0, -2, vary_p = 0, step = 0.1, max_steps = 40, discret=None)
 
-# solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-X, C = cont.nat_continuation(cubic, x0, -2, vary_p = 0, step = 0.1, max_steps = 40, discret=linear)
+    print('X = ', X)
+    print('C = ', C)
 
-# plot the solution
-plt.figure()
-plt.title('Cubic Equation')
-plt.plot(C, X)
-plt.xlabel('parameter c value')
-plt.ylabel('root value')
-plt.grid()
-plt.show()
+    # plot the solution
+    plt.figure()
+    plt.title('Cubic Equation')
+    plt.plot(C, X)
+    plt.xlabel('parameter c value')
+    plt.ylabel('root value')
+    plt.grid()
+    plt.show()
 
-# now test natural continuation with a differential equation - Hopf bifurcation
-def hopf(t, X, *args):
+    # now test natural continuation with a differential equation - Hopf bifurcation
+    def hopf(t, X, *args):
 
-    b = args[0]
+        b = args[0]
 
-    x = X[0]
-    y = X[1]
+        x = X[0]
+        y = X[1]
 
-    dxdt = b*x - y + x*(x**2 + y**2) - x*(x**2 + y**2)**2
-    dydt = x + b*y + y*(x**2 + y**2) - y*(x**2 + y**2)**2
+        dxdt = b*x - y + x*(x**2 + y**2) - x*(x**2 + y**2)**2
+        dydt = x + b*y + y*(x**2 + y**2) - y*(x**2 + y**2)**2
 
-    return np.array([dxdt, dydt])
+        return np.array([dxdt, dydt])
 
-def hopf_polar(t, X, *args):
+    def hopf_polar(t, X, *args):
 
-    myu, omega = args[0]
+        myu, omega = args[0]
 
-    r = X[0]
-    theta = X[1]
+        r = X[0]
+        theta = X[1]
 
-    drdt = r*(myu - r**2)
-    dthetadt = omega
+        drdt = r*(myu - r**2)
+        dthetadt = omega
 
-    return np.array([drdt, dthetadt])
+        return np.array([drdt, dthetadt])
 
-# define new ode
-a = 1
-d = 0.1
-b = 1.0
+    # define new ode
+    a = 1
+    d = 0.1
+    b = 1.0
 
-def ode(t, Y, args):
+    def ode(t, Y, args):
 
-    a, b, d = args
-    x,y = Y
-    dxdt = x*(1-x) - (a*x*y)/(d+x)
-    dydt = b*y*(1- (y/x))
+        a, b, d = args
+        x,y = Y
+        dxdt = x*(1-x) - (a*x*y)/(d+x)
+        dydt = b*y*(1- (y/x))
 
-    return np.array([dxdt, dydt])
+        return np.array([dxdt, dydt])
 
-# define the initial conditions
-x0 = [1, 1]
+    # define the initial conditions
+    x0 = [1, 1]
 
-# define parameter
-myu, omega = -1, 0.01
-p = [myu, omega]
+    # define parameter
+    myu, omega = -1, 0.01
+    p = [myu, omega]
 
-print('\nSecond example: Hopf Bifurcation with shooting discretisation')
+    print('\nSecond example: Hopf Bifurcation with shooting discretisation')
 
-# solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-X, C = cont.nat_continuation(hopf_polar, x0, p, vary_p = 0, step = 0.01, max_steps = 150, discret=shooting_setup)
+    # natural continuation with shooting discretisation
+    X, C = cont.nat_continuation(hopf_polar, x0, p, vary_p = 0, step = 0.1, max_steps = 40, discret=discret.shooting_setup)
 
-# split the X into x, y and period at each parameter value
-print('\nX = ', X)
-print('\nC = ', C)
+    # split the X into x, y and period at each parameter value
+    print('\nX = ', X)
+    print('\nC = ', C)
 
-# extract the period (the last element of the solution)
-T = [x[-1] for x in X] 
-print('\nT = ', T)
+    # extract the period (the last element of the solution)
+    T = [x[-1] for x in X] 
+    print('\nT = ', T)
 
 
-# plot the period
-plt.figure()
-plt.title('Polar Hopf Bifurcation')
-plt.plot(C, T)
-plt.xlabel('parameter myu value')
-plt.ylabel('period value')
-plt.grid()
-plt.show()
+    # plot the period
+    plt.figure()
+    plt.title('Polar Hopf Bifurcation')
+    plt.plot(C, T)
+    plt.xlabel('parameter myu value')
+    plt.ylabel('period value')
+    plt.grid()
+    plt.show()
 
 
 
