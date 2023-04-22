@@ -77,13 +77,13 @@ class Solver():
         # define an initial guess for the solution
         self.u = np.zeros(N-1)
 
-    def solve(self, t=0):
+    def solve(self):
         '''
         Solve the ODE using the method specified in self.method
         '''
 
         if self.method == 'scipy':
-            u = self.scipy_solve(t=t)
+            u = self.scipy_solve()
         elif self.method == 'numpy':
             u = self.numpy_solve()
         elif self.method == 'tdma':
@@ -92,7 +92,7 @@ class Solver():
 
         return u
     
-    def q_vector(self, x, u, *args, t=0):
+    def q_vector(self, x, u, *args):
         '''
         Makes a q vector for the ODE
 
@@ -104,7 +104,7 @@ class Solver():
         # define the vector q as a function of u but length N-1
         if callable(self.ODE.q):
             # make a vector of length x_int, and width 1 with q(x,t, u,args) for each x in x_int
-            q_vec = self.ODE.q(x, t, u, *args)
+            q_vec = self.ODE.q(x, u, *args)
             return q_vec
         
         # if q is a constant
@@ -112,7 +112,7 @@ class Solver():
             return self.ODE.q * np.ones(self.N-1)
     
 
-    def scipy_solve(self, t=0):    
+    def scipy_solve(self):    
         '''
         solves the ODE using scipy root function
 
@@ -124,7 +124,7 @@ class Solver():
         '''
         # define the function to be solved
         def f(u):
-            return self.ODE.m * self.A_mat @ u - self.ODE.k * self.b_vec - self.ODE.c * self.q_vector( self.x_int, u, *self.ODE.args, t=t)
+            return self.ODE.m * self.A_mat @ u - self.ODE.k * self.b_vec - self.ODE.c * self.q_vector( self.x_int, u, *self.ODE.args)
         
         # solve the function
         sol = root(f, self.u)
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     k = 1
 
    
-    def q(x, t, u, *args):
+    def q(x, u, *args):
         return 1
     
     bound_type = 'DD'
