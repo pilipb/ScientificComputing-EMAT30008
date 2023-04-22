@@ -1,201 +1,228 @@
-'''
-implement alpha PDE solver using the explicit Euler method to solve the following PDE:
-
-linear diffusion equation:
-
-u_t = D*u_xx
-
-u(alpha,t) = 0
-u(beta,t) = 0
-
-u(x,0) = sin((pi*(x-alpha)/beta-alpha))
-
-the exact solution is:
-
-u(x,t) = sin((pi*(x-alpha)/beta-alpha)) * exp(-pi**2*D*t/(beta-alpha)**2)
-
-'''
-
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.integrate import solve_ivp
-from solvers import *
 from math import ceil
-from helpers import *
+from bvp_solver import ODE
+from helpers import boundary
+from scipy.optimize import root
 
-def pde_solver(f, alpha, beta, a, b,bound_type, D, t_final, N, q = lambda x_int,t,u, *args: 0,  CFL= 0.49, method = 'RK4', args = None):
-
+class PDE():
     '''
-    A PDE solver that implements different integration methods to solve the PDE
-
-    PDE in the form:
-
-    u_t = D*u_xx + q(x,t,u)
-
-    left boundary condition:
-    D,N,R (a,t) =  alpha (Dirichlet, Neumann, Robin)
-
-    right boundary condition:
-    D,N,R (b,t) =  beta (Dirichlet, Neumann, Robin)
-
-    u(x,0) = f(x)
-
-    Parameters:
-    ------------------
-    f : function
-        the initial condition
-    alpha : float
-        the left boundary 
-    beta : float
-        the right boundary 
-    a : float
-        the left boundary value 
-    b : float
-        the right boundary value 
-    bound : string
-        the type of boundary condition
-    D : float
-        the diffusion coefficient from form 
-    t_final : float
-        the final time
-    N : int
-        the number of grid points
-    q : function
-        the source term default = 0
-    C : float
-        the Courant number - CFL condition default = 0.49 (for homemade methods)
-    method : string
-        the integration method to be used
-        options: 'Euler', 'RK4', 'Heun', 'solve_ivp', 'explicit_euler'
-    args : tuple
-        the arguments for the q function
-
+    Class to store the parameters of the ODE
     '''
+    def __init__(self, f, m,  q, bound_type, alpha, beta, a, b, *args):
+        '''
+        Second order ODE of the form:
+        du/dt = m*u'' + q(x,u,t,args)
 
-    # create the grid
-    x = np.linspace(a, b, N+1)
-    x_int = x[1:-1] # interior points
-    dx = (b-a)/N
+        with starting conditions:
+        u(a,t) = alpha
+        u(b,t) = beta
 
-    # time discretization
-    dt = CFL*dx**2/D
-    N_time = ceil(t_final/dt)
-    t = dt * np.arange(N_time)
+        u(x,0) = f(x)
 
-    # preallocate solution and boundary conditions
-    u = np.zeros((N_time+1, N-1))
-    u[0,:] = f(x_int)
+        Parameters
+        ----------
+        f : function
+            The initial condition.
+        m : float
+            2nd order coefficient.
+        q : function
+            Function of x, t and u. (source term)
+        bound_type : string
+            The type of boundary condition: DD, DN, DR, ND, NN, NR, RD, RN, RR (Dirichlet, Neumann, Robin)
+        alpha : float
+            The left boundary condition.
+        beta : float
+            The right boundary condition.
+        a : float
+            The left edge of the domain.
+        b : float
+            The right edge of the domain.
+        args: tuple
+            The arguments for the function q(x,u,args)
 
-    # define the PDE - for alpha constant time therefore its alpha 1st order ODE
-    def PDE(t, u , *args):
-        # unpack the args
-        D = args[0][0]
-        A_ = args[0][1]
-        b_ = args[0][2]
-        q = args[0][3]
+        '''
+        self.f = f
+        self.m = m
+        self.q = q
+        self.bound_type = bound_type
+        self.alpha = alpha
+        self.beta = beta
+        self.a = a
+        self.b = b
+        self.args = args
 
-        # calculate the source term
-        if callable(q):
-            qval = q(x_int, t, u, *args[0][4:])
-        else:
-            qval = q
+class Solver():
+    '''
+    Solver class for the PDE
+    
+    '''
+    def __init__(self, PDE, N, t_final, method, CFL=0.49):
+        '''
+        Class to solve the ODE
 
-        # apply the PDE
-        return (D / dx**2) * (A_ @ u + b_) + qval
+        Parameters
+        ----------
+        PDE : PDE object
+            The PDE object to be solved.
+        N : int
+            The number of interior points.
+        method : string
+            The method to solve the ODE:
 
-    # define the PDE - different form for solve_ivp
-    def PDE_ivp(t, u, D, A_, b_, q, *args):
-        return (D / dx**2) * (A_ @ u + b_) + q(x_int,t, u, *args)
+        '''
+        self.PDE = PDE
+        self.N = N
+        self.t_final = t_final
+        self.method = method
+        self.CFL = CFL
 
-    # create the boundary matrices
-    A_, b_ = boundary(alpha, beta, N, dx, bound_type)
+        # create the grid (space discretisation)
+        self.x = np.linspace(PDE.a, PDE.b, N+1)
+        self.x_int = self.x[1:-1] # interior points
+        self.dx = (self.PDE.b-self.PDE.a)/N
 
-    # identify the method
-    if method == 'explicit_euler':
+        # time discretisation
+        self.dt = CFL*self.dx**2/self.PDE.m
+        self.N_time = ceil(t_final/self.dt)
+        self.t = self.dt * np.arange(self.N_time)
 
-        print('Using the explicit Euler method...\n')
+        # preallocate solution and boundary conditions
+        self.u = np.zeros((self.N_time+1, N-1))
+        self.u[0,:] = self.PDE.f(self.x_int)
 
-        # print some info about time step
-        print('\ndt = %.6f' % dt)
-        print('%i time steps will be needed\n' % N_time)
+        # create the matrix A and vector b
+        self.A_mat, self.b_vec = boundary(PDE.alpha, PDE.beta, N, self.dx, PDE.bound_type)
 
-        # loop over the steps
-        for n in range(0, N_time):
 
-            for i in range(1, N):
+    def q_vector(self, x, t, u, *args):
+        '''
+        Makes a q vector for the ODE
 
-                u[n+1,i-1] = u[n,i-1] + dt * PDE(t[n], u[n,:], (D, A_, b_, q, args))[i-1]
-
-        # concatenate the boundary conditions - for plotting
-        u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
+        Returns
+        -------
+        q_vec : np.array
+            The q vector for the ODE
+        '''
+        # define the vector q as a function of u but length N-1
+        if callable(self.PDE.q):
+            # make a vector of length x_int, and width 1 with q(x,u,args) for each x in x_int
+            q_vec = self.PDE.q(x, t, u, *args)
+            return q_vec
         
+        # if q is a constant
+        else:
+            return self.PDE.q * np.ones(self.N-1)
 
-        return u, t, x
 
 
-    elif method == 'solve_ivp':
+    def solve(self):
+        '''
+        Solve the PDE using the specified method
 
-        print('Using the solve_ivp function...\n')
+        Returns
+        -------
+        u : np.array
+            The solution to the PDE [u(x,t)]
 
-        sol = solve_ivp(PDE_ivp, (0, t_final), f(x_int), args=(D, A_, b_, q, args))
+        '''
+
+
+        if self.method == 'solve_ivp':
+            u = self.solveivp_solve()
+        elif self.method == 'implicit_euler':
+            u = self.implicit_solve()
+        elif self.method == 'crank_nicolson':
+            u = self.crank_nicolson_solve()
+        elif self.method == 'imex_euler':
+            u = self.imex_euler_solve()
+        elif self.method in ['Euler', 'RK4', 'Heun']:
+            u = self.custom_solve(self.method)
+
+        return u
+    
+    def solveivp_solve(self):
+        '''
+        Solve the PDE using the solve_ivp method
+
+        '''
+        from scipy.integrate import solve_ivp
+
+        # define the PDE - different form for solve_ivp
+        def PDE_ivp(t, u, D, A_, b_, q, *args):
+            return (D / self.dx**2) * (A_ @ u + b_) + q(self.x_int,t, u, *args)
+
+        sol = solve_ivp(PDE_ivp, (0, self.t_final), self.PDE.f(self.x_int), args=(self.PDE.m, self.A_mat, self.b_vec, self.PDE.q, self.PDE.args))
 
         # extract the solution
         u = sol.y
-        t = sol.t
+        self.t = sol.t
 
-        N_time = len(t)
+        # add the boundary conditions at all times by concatenating alpha and beta at all times to the solution
+        alphas = np.ones((len(self.t),1)) * self.PDE.alpha
+        betas = np.ones((len(self.t),1)) * self.PDE.beta
+        self.u = np.concatenate((alphas, u.T, betas), axis=1).T
 
-        # add on the u(alpha,t) and u(beta,t) boundary conditions - for plotting
-        u = np.concatenate((alpha*np.ones((1,N_time)), u, beta*np.ones((1,N_time))), axis = 0)
+        return self.u
+
+    
+    def implicit_solve(self):
+        '''
+        Solve the PDE using the implicit Euler method using root
+            
+        '''
+        # function to solve but as a function of u, t, and args
+        def F(u, t, *args):
+            # unpack the args
+            D = args[0][0]
+            A_ = args[0][1]
+            b_ = args[0][2]
+            q = args[0][3]
+
+            # calculate the source term
+            if callable(q):
+                qval = q(self.x_int, t, u, *args[0][4:])
+            else:
+                qval = q
+
+            # apply the PDE
+            return (D / self.dx**2) * (A_ @ u + b_) + qval 
         
 
-        return u.T, t, x
+        # loop over the steps
+        for n in range(0, self.N_time):
+                
+            # define the function to solve (F(u_n+1) = 0 (removing the time dependence)
+            def F_solve(u):
+                return F(u, self.t[n], (self.PDE.m, self.A_mat, self.b_vec, self.PDE.q, self.PDE.args)) - self.u[n,:]
+
+            # solve the function
+            sol = root(F_solve, self.u[n,:], method='hybr')
+            # extract the solution
+            self.u[n+1,:] = sol.x
+
+        # concatenate the boundary conditions
+        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), self.u, beta*np.ones((self.N_time+1,1))), axis = 1).T
+        
+        return u
     
-    elif method == 'implicit_euler':
-
-        print('Using the implicit Euler method...\n')
-
-        # print some info about time step
-        # print('\ndt = %.6f' % dt)
-        # print('%i time steps will be needed\n' % N_time)
+    def crank_nicolson_solve(self):
+        '''
+        Solve the PDE using the Crank-Nicolson method (linear only)
+            
+        '''
+        # check that q is zero or constant
+        if callable(self.PDE.q):
+            raise ValueError('q must be zero or constant for the Crank-Nicolson method')
+        
+        u = self.u
 
         # define the matrices for the implicit method
-        C = dt * D / dx**2
-        A = np.eye(N-1) - C * A_
-        b = u + C * b_
+        C = self.dt * self.PDE.m / self.dx**2
+        A = np.eye(self.N-1) - C/2 * self.A_mat
+        b = A * u[-1,:] + C/2 * (self.b_vec + self.PDE.q * np.ones(self.N-1))
 
         # loop over the steps
-        for n in range(0, N_time):
-
-                u[n+1,:] = np.linalg.solve(A, b[-1,:])
-
-                # update the boundary conditions
-                u[n+1,0] = alpha
-                u[n+1,-1] = beta    
-
-    
-
-
-        # concatenate the boundary conditions - for plotting
-        u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
-
-        return u, t, x
-    
-    elif method == 'crank_nicolson':
-
-        print('Using the Crank-Nicolson method...\n')
-
-        # print some info about time step
-        # print('\ndt = %.6f' % dt)
-        # print('%i time steps will be needed\n' % N_time)
-
-        # define the matrices for the implicit method
-        C = dt * D / dx**2
-        A = np.eye(N-1) - C/2 * A_
-        b = A * u[-1,:] + C/2 * b_
-
-        # loop over the steps
-        for n in range(0, N_time):
+        for n in range(0, self.N_time):
                 
             u[n+1,:] = np.linalg.solve(A, b[-1,:])
 
@@ -204,200 +231,144 @@ def pde_solver(f, alpha, beta, a, b,bound_type, D, t_final, N, q = lambda x_int,
             u[n+1,-1] = beta
 
         # concatenate the boundary conditions - for plotting
-        u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
+        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), u, beta*np.ones((self.N_time+1,1))), axis = 1).T
 
-        return u, t, x
+        return u
+    
+    def imex_euler_solve(self):
+        '''
+        Implicit-Explicit Euler method
+                nonlinear terms are solved explicitly (q)
+                linear terms are solved implicitly (everything else)
+            
+        '''
+        # assume q is a function of x, t, u, and args
 
-    elif method in ['Euler', 'RK4', 'Heun']:
+        # implicit linear solver
+        # define the matrices for the implicit method
+        u = self.u
+        C = self.dt * self.PDE.m / self.dx**2
+        A = np.eye(self.N-1) - C * self.A_mat
+        b = u + C * self.b_vec
+
+        # loop over the steps
+        for n in range(0, self.N_time):
+
+            u[n+1,:] = np.linalg.solve(A, b[-1,:]) + self.dt * self.PDE.q(self.x_int, self.t[n], u[n,:], *self.PDE.args)
+
+            # update the boundary conditions
+            u[n+1,0] = alpha
+            u[n+1,-1] = beta 
+
+        # concatenate the boundary conditions 
+        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), u, beta*np.ones((self.N_time+1,1))), axis = 1).T
+
+        return u
+    
+    def custom_solve(self, option):
+        '''
+        solve the PDE using a homemade explicit solver using a method from solvers.py
+                Euler, RK4 or Heun's method
+    
+        '''
+        from solvers import euler_step, rk4_step, heun_step
+
+        # function to solve but as a function of u, t, and args
+        def PDE_solve(t, u , *args):
+            # unpack the args
+            D = args[0][0]
+            A_ = args[0][1]
+            b_ = args[0][2]
+            q = args[0][3]
+
+            # calculate the source term
+            if callable(q):
+                qval = q(self.x_int, t, u, *args[0][4:])
+            else:
+                qval = q
+
+            # apply the PDE
+            return (D / self.dx**2) * (A_ @ u + b_) + qval
 
         # find method
         methods = {'Euler': euler_step, 'RK4': rk4_step, 'Heun': heun_step}
+        method = methods[option]
 
-        # check if method is valid
-        if method not in methods:
-            raise ValueError('Invalid method, please enter alpha valid method: Euler, RK4, Heun or define your own in solvers.py')
+        u = self.u
 
-        # set method
-        method = methods[method]
-
-        print('Using the %s method...\n' % method.__name__)
-
-        # print some info about time step
-        # print('\ndt = %.6f' % dt)
-        # print('%i time steps will be needed\n' % N_time)
-        
         # loop over the time steps
-        for n in range(0, N_time):
+        for n in range(0, self.N_time):
 
             # update the solution
-            u[n+1,:] = method(PDE, u[n,:], t[n], dt, ( D, A_, b_, q , args))[0]
+            u[n+1,:] = method(PDE_solve, u[n,:], self.t[n], self.dt, ( self.PDE.m, self.A_mat, self.b_vec, self.PDE.q , self.PDE.args))[0]
 
         # concatenate the boundary conditions
-        u = np.concatenate((alpha*np.ones((N_time+1,1)), u, beta*np.ones((N_time+1,1))), axis = 1)
+        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), u, beta*np.ones((self.N_time+1,1))), axis = 1).T
 
-        return u, t, x
+        return u
     
-    else:
-        raise ValueError('Invalid method, please enter a valid method: Euler, RK4, Heun, explicit_euler, implicit_euler, solve_ivp or define your own in solvers.py')
+
+  
+    
 
 
+    
+
+    
+
+
+        
+##### TEST #####
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
 
-    '''
-    Testing the solver
+    # define the ODE
+    m = 0.01
 
-    '''
-
-    # test the solver for the linear diffusion equation
-
-    # define the problem
-    D = 0.5
-    a = 0.0
-    b = 1.0
-    alpha = 0.0
-    beta = 0.0
+    q = lambda x, t, u, *args: np.exp(args[0] * u)
+    # q = 0
+    bound_type = 'DD'
+    alpha = 0
+    beta = 0
+    a = 0
+    b = 1
+    args = (3,)
     f = lambda x: np.sin((np.pi*(x-a)/b-a))
-    t_final = 0.5
-    N = 10
 
-    # define the exact solution
-    u_exact = lambda x, t: np.sin(np.pi*(x-a)/b-a)*np.exp(-np.pi**2*D*t/b**2)
+    # create the PDE object
+    pde = PDE(f, m, q, bound_type, alpha, beta, a, b, *args)
 
+    # create the solver object
+    N = 100
+    method = 'explicit_euler'
+    t_final = 0.01
+    solver = Solver(pde, N, t_final, method, CFL=0.6)
 
-    # solve the problem for RK4, explicit_euler, implicit_euler, solve_ivp and crank_nicolson
-    for method in ['RK4', 'explicit_euler', 'solve_ivp', 'implicit_euler', 'crank_nicolson']:
+    # solve the ODE
+    u = solver.solve()
 
-        # solve the problem
-        u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = method)
+    # extract the grid
+    x = solver.x
 
-        # plot the solution at 3 different times
-        for n in np.linspace(0, len(t)-1, 5, dtype = int):
+    # plot the solution at 3 different times
+    for n in np.linspace(0, len(solver.t)-1, 10, dtype = int):
+        plt.plot(x, u[:,n], label = 't = {}'.format(solver.t[n]))
 
-            plt.plot(x, u[n,:], label = '%s at t = %.2f' % (method, t[n]))
-
-            # plot the exact solution at the same times
-            plt.plot(x, u_exact(x, t[n]), '--', label = 'exact at t = %.2f' % t[n])
-
-
-
-        plt.title('Linear diffusion equation - %s' % method)
-        plt.legend()
-        plt.xlabel('x')
-        plt.ylabel('u(x,t)')
-        plt.show()
+    plt.legend()
+    plt.show()
 
 
-    ### solve the dynamic Bratu problem
+        
 
-    # # define the problem
-    # D = 1.0
-    # myu = [2,4]
+        
 
-    # # u(0,t) = 0
-    # alpha = 0.0
-    # # u(1,t) = 0
-    # beta = 0.0
-    # a = 0.0
-    # b = 1.0
-    # f = lambda x: np.zeros(len(x))
-    # t_final = 0.5
-    # N = 10
-
-
-    # # define the function q(x) = exp(myu*u)
-    # def q(x,t, u, args):
-    #     myu = args[0]
-    #     # return np.exp(myu*u)
-    #     return np.ones(len(x))
-    
-    # # define the exact solution
-    # # u_exact = lambda x, t, myu: np.exp(-myu**2*t)*np.sin(np.pi*x)
-
-    # # exact solution for source term q(x) = 1
-    # def u_exact(x, t, myu):
-    #     return (-1/(2*D))*(x - a) * (x - b) + ((beta - alpha)/(b - a))*(x- a) + alpha
-
-    
-    # # compute solution for different values of myu
-    # for myu in [2]:
-
-    #     # solve the problem
-    #     u, t, x = pde_solver(f, alpha, beta, a, b, 'DD', D, t_final, N, method = 'RK4', q = q, args = [myu])
-
-    #     # plot the solution at 3 different times
-    #     for n in np.linspace(0, len(t)-1, 10, dtype = int):
-                
-    #         plt.plot(x, u[n,:], label = 'RK4 at t = %.2f' % t[n])
-
-    #         # plot the exact solution at the same times
-    #         plt.plot(x, u_exact(x, t[n], myu), '--', label = 'exact at t = %.2f' % t[n])
+        
 
 
 
-    # plt.title('Dynamic Bratu problem - RK4')
-    # plt.legend()
-    # plt.xlabel('x')
-    # plt.ylabel('u(x,t)')
-    # plt.show()
 
-    ### solve the heat equation with neumann boundary condition
-
-    # # define the problem
-    # D = 1.0
-    # a = 0.0
-    # b = 1.0
-
-    # # u_x(0,t) = 0
-    # alpha = 0.0
-
-    # # u_x(1,t) = 0
-    # beta = 0.0
-
-    # # initial condition u(x,0) = sin(pi*x)
-    # f = lambda x: np.sin(np.pi*x)
-
-    # # final time
-    # t_final = 0.5
-
-    # # number of time steps
-    # N = 50
-
-    # # define the exact solution
-    # u_exact = lambda x, t: np.sin(np.pi*x)*np.exp(-np.pi**2*D*t)
-
-    # # solve the problem
-    # u, t, x = pde_solver(f, alpha, beta, a, b, 'NN', D, t_final, N, method = 'solve_ivp')
-
-    # # plot the solution at 3 different times
-    # for n in np.linspace(0, len(t)-1, 10, dtype = int):
-
-
-    #     plt.plot(x, u[n,:], label = 'RK4 at t = %.2f' % t[n])
-
-
-
-    # plt.title('Heat equation with Neumann boundary condition')
-    # plt.legend()
-    # plt.xlabel('x')
-    # plt.ylabel('u(x,t)')
-    # plt.show()
-
-    
+        
 
 
     
-
-
-
-    
-
-
-    
-    
-
-
-
-
-
-
