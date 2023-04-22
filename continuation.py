@@ -154,8 +154,8 @@ if __name__ == '__main__':
     # natural continuation with no discretisation
     X, C = cont.nat_continuation(cubic, x0, -2, vary_p = 0, step = 0.1, max_steps = 40, discret=None)
 
-    print('X = ', X)
-    print('C = ', C)
+    # print('X = ', X)
+    # print('C = ', C)
 
     # plot the solution
     plt.figure()
@@ -206,7 +206,7 @@ if __name__ == '__main__':
         return np.array([dxdt, dydt])
 
     # define the initial conditions
-    x0 = [1, 1]
+    x0 = [1, 1, 2]
 
     # define parameter
     myu, omega = -1, 0.01
@@ -215,15 +215,15 @@ if __name__ == '__main__':
     print('\nSecond example: Hopf Bifurcation with shooting discretisation')
 
     # natural continuation with shooting discretisation
-    X, C = cont.nat_continuation(hopf_polar, x0, p, vary_p = 0, step = 0.1, max_steps = 40, discret=discret.shooting_setup)
+    X, C = cont.nat_continuation(hopf_polar, x0, p, vary_p = 0, step = 0.1, max_steps = 100, discret=discret.shooting_setup)
 
     # split the X into x, y and period at each parameter value
-    print('\nX = ', X)
-    print('\nC = ', C)
+    # print('\nX = ', X)
+    # print('\nC = ', C)
 
     # extract the period (the last element of the solution)
     T = [x[-1] for x in X] 
-    print('\nT = ', T)
+    # print('\nT = ', T)
 
 
     # plot the period
