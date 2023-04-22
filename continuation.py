@@ -63,10 +63,8 @@ def nat_continuation(ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discr
     to make the F(x) = 0 that will be solved by the solver
     
     '''
-    try:
-        param = p0[vary_p]
-    except:
-        param = p0
+    param = p0
+
 
     T = 10
 
@@ -85,15 +83,28 @@ def nat_continuation(ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discr
 
     # append the solution
     X.append(sol)
-    C.append(param)
+    try:
+        C.append(param[vary_p])
+    except:
+        C.append(param)
 
     num_steps = 0
     # loop with incrementing c until reaching the limit
     while num_steps < max_steps:
-        param += step
+        try:
+            param[vary_p] += step
+        except:
+            param+=step
+
         sol = scipy.optimize.fsolve(fun, u0, args = (param))
+
         X.append(sol)
-        C.append(param)
+
+        try:
+            C.append(param[vary_p])
+        except:
+            C.append(param)
+
         num_steps += 1
 
     return X, C
@@ -111,6 +122,8 @@ x0 = 1
 # define the limit of c
 def linear(x, x0, T, args):
     return x 
+
+print('\nFirst example: cubic equation with linear discretisation')
 
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
 X, C = nat_continuation(cubic, x0, -2, vary_p = 0, step = 0.1, max_steps = 40, discret=linear, solver=scipy.optimize.fsolve)
@@ -137,33 +150,39 @@ def hopf(t, X, *args):
 
     return np.array([dxdt, dydt])
 
+# define new ode
+a = 1
+d = 0.1
+b = 1.0
+
+def ode(t, Y, args):
+
+    a, b, d = args
+    x,y = Y
+    dxdt = x*(1-x) - (a*x*y)/(d+x)
+    dydt = b*y*(1- (y/x))
+
+    return np.array([dxdt, dydt])
+
 # define the initial conditions
 x0 = [0.1,0.1]
 
 # define parameter
-p = 1
+p = 2
 
-print('second')
+print('\nSecond example: Hopf Bifurcation with shooting discretisation')
 
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-X, C = nat_continuation(hopf, x0, p, vary_p = 0, step = -0.1, max_steps = 30, discret=shooting_setup, solver=scipy.optimize.fsolve)
+X, C = nat_continuation(hopf, x0, p, vary_p = 0, step = -0.2, max_steps = 16, discret=shooting_setup, solver=scipy.optimize.fsolve)
 
 # split the X into x, y and period at each parameter value
-x = [x[0] for x in X]
-y = [x[1] for x in X]
-T = [x[2] for x in X]
+print('X = ', X)
+print('C = ', C)
 
-y0 = np.array([x[-1], y[-1]])
+# extract the period (the last element of the solution)
+T = [x[-1] for x in X] 
+print('T = ', T)
 
-# plot the solution
-plt.figure()
-plt.title('Hopf Bifurcation')
-plt.plot(C, x)
-plt.plot(C, y)
-plt.xlabel('parameter b value')
-plt.ylabel('starting values of x and y')
-plt.grid()
-plt.show()
 
 # plot the period
 plt.figure()
