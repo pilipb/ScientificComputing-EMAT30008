@@ -129,14 +129,14 @@ class Solver():
 
         if self.method == 'solve_ivp':
             u = self.solveivp_solve()
-        elif self.method == 'explicit_euler':
-            u = self.explicit_solve()
         elif self.method == 'implicit_euler':
             u = self.implicit_solve()
         elif self.method == 'crank_nicolson':
             u = self.crank_nicolson_solve()
         elif self.method == 'imex_euler':
             u = self.imex_euler_solve()
+        elif self.method in ['Euler', 'RK4', 'Heun']:
+            u = self.custom_solve(self.method)
 
         return u
     
@@ -163,43 +163,7 @@ class Solver():
         self.u = np.concatenate((alphas, u.T, betas), axis=1).T
 
         return self.u
-    
-    def explicit_solve(self):
-        '''
-        Solve the PDE using the explicit Euler method
 
-        '''
-        # define the PDE - for alpha constant time therefore its alpha 1st order ODE
-        def PDE_solve(t, u , *args):
-            # unpack the args
-            D = args[0][0]
-            A_ = args[0][1]
-            b_ = args[0][2]
-            q = args[0][3]
-
-            # calculate the source term
-            if callable(q):
-                qval = q(self.x_int, t, u, *args[0][4:])
-            else:
-                qval = q
-
-            # apply the PDE
-            return (D / self.dx**2) * (A_ @ u + b_) + qval
-        
-        u = self.u
-        
-        # loop over the time steps
-        for n in range(0, self.N_time):
-
-            # loop over the interior points
-            for i in range(1, self.N):
-
-                u[n+1,i-1] = u[n,i-1] + self.dt * PDE_solve(self.t[n], u[n,:], (self.PDE.m, self.A_mat, self.b_vec, self.PDE.q, self.PDE.args))[i-1]
-
-        # concatenate the boundary conditions 
-        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), u, beta*np.ones((self.N_time+1,1))), axis = 1).T
-
-        return u
     
     def implicit_solve(self):
         '''
@@ -300,6 +264,50 @@ class Solver():
         u = np.concatenate((alpha*np.ones((self.N_time+1,1)), u, beta*np.ones((self.N_time+1,1))), axis = 1).T
 
         return u
+    
+    def custom_solve(self, option):
+        '''
+        solve the PDE using a homemade explicit solver using a method from solvers.py
+                Euler, RK4 or Heun's method
+    
+        '''
+        from solvers import euler_step, rk4_step, heun_step
+
+        # function to solve but as a function of u, t, and args
+        def PDE_solve(t, u , *args):
+            # unpack the args
+            D = args[0][0]
+            A_ = args[0][1]
+            b_ = args[0][2]
+            q = args[0][3]
+
+            # calculate the source term
+            if callable(q):
+                qval = q(self.x_int, t, u, *args[0][4:])
+            else:
+                qval = q
+
+            # apply the PDE
+            return (D / self.dx**2) * (A_ @ u + b_) + qval
+
+        # find method
+        methods = {'Euler': euler_step, 'RK4': rk4_step, 'Heun': heun_step}
+        method = methods[option]
+
+        u = self.u
+
+        # loop over the time steps
+        for n in range(0, self.N_time):
+
+            # update the solution
+            u[n+1,:] = method(PDE_solve, u[n,:], self.t[n], self.dt, ( self.PDE.m, self.A_mat, self.b_vec, self.PDE.q , self.PDE.args))[0]
+
+        # concatenate the boundary conditions
+        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), u, beta*np.ones((self.N_time+1,1))), axis = 1).T
+
+        return u
+    
+
   
     
 
@@ -333,7 +341,7 @@ if __name__ == '__main__':
 
     # create the solver object
     N = 100
-    method = 'imex_euler'
+    method = 'explicit_euler'
     t_final = 0.01
     solver = Solver(pde, N, t_final, method, CFL=0.6)
 
