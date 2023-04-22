@@ -133,6 +133,10 @@ class Solver():
             u = self.explicit_solve()
         elif self.method == 'implicit_euler':
             u = self.implicit_solve()
+        elif self.method == 'crank_nicolson':
+            u = self.crank_nicolson_solve()
+        elif self.method == 'imex_euler':
+            u = self.imex_euler_solve()
 
         return u
     
@@ -199,7 +203,7 @@ class Solver():
     
     def implicit_solve(self):
         '''
-        Solve the PDE using the implicit Euler method using root 
+        Solve the PDE using the implicit Euler method using root
             
         '''
         # function to solve but as a function of u, t, and args
@@ -237,6 +241,72 @@ class Solver():
         
         return u
     
+    def crank_nicolson_solve(self):
+        '''
+        Solve the PDE using the Crank-Nicolson method (linear only)
+            
+        '''
+        # check that q is zero or constant
+        if callable(self.PDE.q):
+            raise ValueError('q must be zero or constant for the Crank-Nicolson method')
+        
+        u = self.u
+
+        # define the matrices for the implicit method
+        C = self.dt * self.PDE.m / self.dx**2
+        A = np.eye(self.N-1) - C/2 * self.A_mat
+        b = A * u[-1,:] + C/2 * (self.b_vec + self.PDE.q * np.ones(self.N-1))
+
+        # loop over the steps
+        for n in range(0, self.N_time):
+                
+            u[n+1,:] = np.linalg.solve(A, b[-1,:])
+
+            # update the boundary conditions
+            u[n+1,0] = alpha
+            u[n+1,-1] = beta
+
+        # concatenate the boundary conditions - for plotting
+        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), u, beta*np.ones((self.N_time+1,1))), axis = 1).T
+
+        return u
+    
+    def imex_euler_solve(self):
+        '''
+        Implicit-Explicit Euler method
+                nonlinear terms are solved explicitly (q)
+                linear terms are solved implicitly (everything else)
+            
+        '''
+        # assume q is a function of x, t, u, and args
+
+        # implicit linear solver
+        # define the matrices for the implicit method
+        u = self.u
+        C = self.dt * self.PDE.m / self.dx**2
+        A = np.eye(self.N-1) - C * self.A_mat
+        b = u + C * self.b_vec
+
+        # loop over the steps
+        for n in range(0, self.N_time):
+
+            u[n+1,:] = np.linalg.solve(A, b[-1,:]) + self.dt * self.PDE.q(self.x_int, self.t[n], u[n,:], *self.PDE.args)
+
+            # update the boundary conditions
+            u[n+1,0] = alpha
+            u[n+1,-1] = beta 
+
+        # concatenate the boundary conditions 
+        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), u, beta*np.ones((self.N_time+1,1))), axis = 1).T
+
+        return u
+  
+    
+
+
+    
+
+    
 
 
         
@@ -246,9 +316,10 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     # define the ODE
-    m = 0.5
+    m = 0.01
 
-    q = lambda x, t, u, *args: 0
+    q = lambda x, t, u, *args: np.exp(args[0] * u)
+    # q = 0
     bound_type = 'DD'
     alpha = 0
     beta = 0
@@ -262,9 +333,9 @@ if __name__ == '__main__':
 
     # create the solver object
     N = 100
-    method = 'implicit_euler'
-    t_final = 0.001
-    solver = Solver(pde, N, t_final, method, CFL=2)
+    method = 'imex_euler'
+    t_final = 0.01
+    solver = Solver(pde, N, t_final, method, CFL=0.6)
 
     # solve the ODE
     u = solver.solve()
@@ -273,8 +344,7 @@ if __name__ == '__main__':
     x = solver.x
 
     # plot the solution at 3 different times
-    for n in np.linspace(0, len(solver.t)-1, 3, dtype = int):
-
+    for n in np.linspace(0, len(solver.t)-1, 10, dtype = int):
         plt.plot(x, u[:,n], label = 't = {}'.format(solver.t[n]))
 
     plt.legend()
