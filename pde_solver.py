@@ -107,7 +107,6 @@ def pde_solver(f, alpha, beta, a, b,bound_type, D, t_final, N, q = lambda x_int,
     def PDE_ivp(t, u, D, A_, b_, q, *args):
         return (D / dx**2) * (A_ @ u + b_) + q(x_int,t, u, *args)
 
-    
     # create the boundary matrices
     A_, b_ = boundary(alpha, beta, N, dx, bound_type)
 

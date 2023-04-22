@@ -11,7 +11,7 @@ class ODE():
     def __init__(self, m, c, k, q, bound_type, alpha, beta, a, b, *args):
         '''
         Second order ODE of the form:
-        m*u'' + c*u' + k * q(x,u,args) = 0
+        m*u'' + c*u' + k * q(x,u,t,args) = 0
 
         Parameters
         ----------
@@ -79,13 +79,13 @@ class Solver():
         # define an initial guess for the solution
         self.u = np.zeros(N-1)
 
-    def solve(self):
+    def solve(self, t=0):
         '''
         Solve the ODE using the method specified in self.method
         '''
 
         if self.method == 'scipy':
-            u = self.scipy_solve()
+            u = self.scipy_solve(t=t)
         elif self.method == 'numpy':
             u = self.numpy_solve()
         elif self.method == 'tdma':
@@ -94,7 +94,7 @@ class Solver():
 
         return u
     
-    def q_vector(self, x, u, *args):
+    def q_vector(self, x, u, *args, t=0):
         '''
         Makes a q vector for the ODE
 
@@ -105,8 +105,8 @@ class Solver():
         '''
         # define the vector q as a function of u but length N-1
         if callable(self.ODE.q):
-            # make a vector of length x_int, and width 1 with q(x,u,args) for each x in x_int
-            q_vec = self.ODE.q(x, u, *args)
+            # make a vector of length x_int, and width 1 with q(x,t, u,args) for each x in x_int
+            q_vec = self.ODE.q(x, t, u, *args)
             return q_vec
         
         # if q is a constant
@@ -114,7 +114,7 @@ class Solver():
             return self.ODE.q * np.ones(self.N-1)
     
 
-    def scipy_solve(self):    
+    def scipy_solve(self, t=0):    
         '''
         solves the ODE using scipy root function
 
@@ -126,7 +126,7 @@ class Solver():
         '''
         # define the function to be solved
         def f(u):
-            return self.ODE.m * self.A_mat @ u - self.ODE.k * self.b_vec - self.ODE.c * self.q_vector(self.x_int, u, *self.ODE.args)
+            return self.ODE.m * self.A_mat @ u - self.ODE.k * self.b_vec - self.ODE.c * self.q_vector( self.x_int, u, *self.ODE.args, t=t)
         
         # solve the function
         sol = root(f, self.u)
@@ -187,6 +187,10 @@ class Solver():
         u = np.concatenate(([self.ODE.alpha], u, [self.ODE.beta]))
 
         return u
+    
+
+
+
 
 
     
@@ -199,7 +203,10 @@ if __name__ == '__main__':
     c = 1
     k = 1
 
-    q = 1
+   
+    def q(x, t, u, *args):
+        return 1
+    
     bound_type = 'DD'
     alpha = 0
     beta = 0
@@ -212,7 +219,7 @@ if __name__ == '__main__':
 
     # create the solver object
     N = 10
-    method = 'tdma'
+    method = 'scipy'
     solver = Solver(ODE, N, method)
 
     # solve the ODE

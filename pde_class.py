@@ -88,11 +88,11 @@ class Solver():
 
         # time discretisation
         self.dt = CFL*self.dx**2/self.PDE.m
-        N_time = ceil(t_final/self.dt)
-        self.t = self.dt * np.arange(N_time)
+        self.N_time = ceil(t_final/self.dt)
+        self.t = self.dt * np.arange(self.N_time)
 
         # preallocate solution and boundary conditions
-        self.u = np.zeros((N_time+1, N-1))
+        self.u = np.zeros((self.N_time+1, N-1))
         self.u[0,:] = self.PDE.f(self.x_int)
 
         # create the matrix A and vector b
@@ -127,6 +127,8 @@ class Solver():
         '''
         if self.method == 'solve_ivp':
             u = self.solveivp_solve()
+        elif self.method == 'explicit_euler':
+            u = self.explicit_solve()
 
         return u
     
@@ -154,6 +156,43 @@ class Solver():
 
         return self.u
     
+    def explicit_solve(self):
+        '''
+        Solve the PDE using the explicit Euler method
+
+        '''
+        # define the PDE - for alpha constant time therefore its alpha 1st order ODE
+        def PDE_solve(t, u , *args):
+            # unpack the args
+            D = args[0][0]
+            A_ = args[0][1]
+            b_ = args[0][2]
+            q = args[0][3]
+
+            # calculate the source term
+            if callable(q):
+                qval = q(self.x_int, t, u, *args[0][4:])
+            else:
+                qval = q
+
+            # apply the PDE
+            return (D / self.dx**2) * (A_ @ u + b_) + qval
+        
+        u = self.u
+        
+        # loop over the time steps
+        for n in range(0, self.N_time):
+
+            # loop over the interior points
+            for i in range(1, self.N):
+
+                u[n+1,i-1] = u[n,i-1] + self.dt * PDE_solve(self.t[n], u[n,:], (self.PDE.m, self.A_mat, self.b_vec, self.PDE.q, self.PDE.args))[i-1]
+
+        # concatenate the boundary conditions 
+        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), u, beta*np.ones((self.N_time+1,1))), axis = 1).T
+
+        return u
+        
 ##### TEST #####
 
 if __name__ == '__main__':
@@ -178,7 +217,7 @@ if __name__ == '__main__':
 
     # create the solver object
     N = 10
-    method = 'solve_ivp'
+    method = 'explicit_euler'
     t_final = 1
     solver = Solver(pde, N, t_final, method)
 
