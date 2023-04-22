@@ -107,3 +107,19 @@ def tdma(A, b):
         x[i] = d[i] - c[i]*x[i+1]
 
     return x
+
+def plot_help(plt, xlabel, ylabel, title=None, legend=False):
+    '''
+    This function is a helper function for plotting
+    '''
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    if title is not None:
+        plt.title(title)
+    
+    if legend:
+        plt.legend()
+
+    plt.grid()
+    plt.show()
