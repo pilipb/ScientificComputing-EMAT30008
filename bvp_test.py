@@ -1,6 +1,6 @@
 from helpers import *
 from scipy.optimize import root
-from numpy.linalg import solve
+import numpy.linalg
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -123,7 +123,7 @@ class Solver():
         '''
         # define the function to be solved
         def f(u):
-            return -self.A_mat @ u + self.b_vec + self.q_vector(self.x_int, u, *self.ODE.args)
+            return self.ODE.m * self.A_mat @ u - self.ODE.k * self.b_vec - self.ODE.c * self.q_vector(self.x_int, u, *self.ODE.args)
         
         # solve the function
         sol = root(f, self.u)
@@ -139,23 +139,47 @@ class Solver():
 
         return u
     
+    def numpy_solve(self):
+        '''
+        solves the ODE using numpy solve function (if q is a constant)
+
+        Returns
+        -------
+        u : np.array
+            The solution to the ODE
+        
+        '''
+    
+        # check if q is a constant
+        if callable(self.ODE.q):
+            raise ValueError('q is not a constant, use scipy method instead')
+        
+        # solve the function
+        u = numpy.linalg.solve(self.ODE.m * self.A_mat, - self.ODE.k * self.b_vec - self.ODE.c * self.q_vector(self.x_int, self.u, *self.ODE.args))
+
+        # concatenate the boundary conditions
+        u = np.concatenate(([self.ODE.alpha], u, [self.ODE.beta]))
+
+        return u
+
 
     
-    ##### test functions #####
+##### test functions #####
 
 if __name__ == '__main__':
 
     # define the ODE
     m = 1
-    c = 0
+    c = 1
     k = 1
-    q = lambda x, u, *args: 1
+
+    q = 1
     bound_type = 'DD'
     alpha = 0
     beta = 0
     a = 0
     b = 1
-    args = (4,)
+    args = (3,)
 
     # create the ODE object
     ODE = ODE(m, c, k, q, bound_type, alpha, beta, a, b, *args)
@@ -170,13 +194,6 @@ if __name__ == '__main__':
 
     # extract the grid
     x = solver.x
-
-    
-
-
-
-
-
 
     # plot the solution
     plt.plot(x, u, 'o-')
