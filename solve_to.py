@@ -1,6 +1,6 @@
 from solvers import *
 
-def solve_to(f, y0, t0, t1, delta_t, method, args = None):
+def solve_to(f, y0, t0, t1, delta_t=0.01, method='RK4', args = None):
 
     '''
     solve_to method will solve ODE from time t0 to t1 with a given step size
