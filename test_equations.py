@@ -47,3 +47,25 @@ def lokta_volterra(t, Y, args):
 
     return np.array([dxdt, dydt])
 
+# example PDE
+def pde_gen(q_lin = False):
+    
+    m = 0.01
+
+    if q_lin:
+        q = 1
+    else:
+        q = lambda x, t, u, *args: np.exp(args[0] * u)
+    
+    bound_type = 'DD'
+    alpha = 0
+    beta = 0
+    a = 0
+    b = 1
+    args = (3,)
+    f = lambda x: np.sin((np.pi*(x-a)/b-a))
+
+    from pde_solver import PDE
+    # create the PDE object
+    return PDE(f, m, q, bound_type, alpha, beta, a, b, *args)
+
