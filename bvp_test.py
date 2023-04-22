@@ -81,13 +81,16 @@ class Solver():
 
     def solve(self):
         '''
-        Solve the ODE
+        Solve the ODE using the method specified in self.method
         '''
 
         if self.method == 'scipy':
             u = self.scipy_solve()
         elif self.method == 'numpy':
             u = self.numpy_solve()
+        elif self.method == 'tdma':
+            u = self.tdma_solve()
+
 
         return u
     
@@ -161,6 +164,29 @@ class Solver():
         u = np.concatenate(([self.ODE.alpha], u, [self.ODE.beta]))
 
         return u
+    
+    def tdma_solve(self):
+        '''
+        solves the ODE using the tridiagonal matrix algorithm
+
+        Returns
+        -------
+        u : np.array
+            The solution to the ODE
+        
+        '''
+        from helpers import tdma
+        # check if q is a constant
+        if callable(self.ODE.q):
+            raise ValueError('q is not a constant, use scipy method instead')
+        
+        # solve the function
+        u = tdma(self.ODE.m * self.A_mat, - self.ODE.k * self.b_vec - self.ODE.c * self.q_vector(self.x_int, self.u, *self.ODE.args))
+
+        # concatenate the boundary conditions
+        u = np.concatenate(([self.ODE.alpha], u, [self.ODE.beta]))
+
+        return u
 
 
     
@@ -186,7 +212,7 @@ if __name__ == '__main__':
 
     # create the solver object
     N = 10
-    method = 'scipy'
+    method = 'tdma'
     solver = Solver(ODE, N, method)
 
     # solve the ODE
