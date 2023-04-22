@@ -51,18 +51,18 @@ class PDE():
 
 class Solver():
     '''
-    Class to solve the ODE
+        Class to solve the ODE
 
-    Parameters
-    ----------
-    PDE : PDE object
-        The PDE object to be solved.
-    N : int
-        The number of interior points.
-    method : string
-        The method to solve the ODE:
+        Parameters
+        ----------
+        PDE : PDE object
+            The PDE object to be solved.
+        N : int
+            The number of interior points.
+        method : string
+            The method to solve the ODE:
 
-    '''
+        '''
     def __init__(self, PDE, N, t_final, method, CFL=0.49):
         
         self.PDE = PDE
@@ -165,6 +165,7 @@ class Solver():
         Solve the PDE using the implicit Euler method using root
             
         '''
+        u = self.u
         # function to solve but as a function of u, t, and args
         def F(u, t, *args):
             # unpack the args
@@ -196,9 +197,9 @@ class Solver():
             self.u[n+1,:] = sol.x
 
         # concatenate the boundary conditions
-        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), self.u, beta*np.ones((self.N_time+1,1))), axis = 1).T
+        self.u = np.concatenate((self.PDE.alpha*np.ones((self.N_time+1,1)), self.u, self.PDE.beta*np.ones((self.N_time+1,1))), axis = 1).T
         
-        return u
+        return self.u
     
     def crank_nicolson_solve(self):
         '''
@@ -222,13 +223,13 @@ class Solver():
             u[n+1,:] = np.linalg.solve(A, b[-1,:])
 
             # update the boundary conditions
-            u[n+1,0] = alpha
-            u[n+1,-1] = beta
+            u[n+1,0] = self.PDE.alpha
+            u[n+1,-1] = self.PDE.beta
 
         # concatenate the boundary conditions - for plotting
-        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), u, beta*np.ones((self.N_time+1,1))), axis = 1).T
+        self.u = np.concatenate((self.PDE.alpha*np.ones((self.N_time+1,1)), u, self.PDE.beta*np.ones((self.N_time+1,1))), axis = 1).T
 
-        return u
+        return self.u
     
     def imex_euler_solve(self):
         '''
@@ -258,13 +259,13 @@ class Solver():
             u[n+1,:] = np.linalg.solve(A, b[-1,:]) + self.dt * qval
 
             # update the boundary conditions
-            u[n+1,0] = alpha
-            u[n+1,-1] = beta 
+            u[n+1,0] = self.PDE.alpha
+            u[n+1,-1] = self.PDE.beta 
 
         # concatenate the boundary conditions 
-        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), u, beta*np.ones((self.N_time+1,1))), axis = 1).T
+        self.u = np.concatenate((self.PDE.alpha*np.ones((self.N_time+1,1)), u, self.PDE.beta*np.ones((self.N_time+1,1))), axis = 1).T
 
-        return u
+        return self.u
     
     def custom_solve(self, option):
         '''
@@ -304,9 +305,9 @@ class Solver():
             u[n+1,:] = method(PDE_solve, u[n,:], self.t[n], self.dt, ( self.PDE.m, self.A_mat, self.b_vec, self.PDE.q , self.PDE.args))[0]
 
         # concatenate the boundary conditions
-        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), u, beta*np.ones((self.N_time+1,1))), axis = 1).T
+        self.u = np.concatenate((self.PDE.alpha*np.ones((self.N_time+1,1)), u, self.PDE.beta*np.ones((self.N_time+1,1))), axis = 1).T
 
-        return u
+        return self.u
     
 def profile(PDE, N, t_final, plot = True):
     '''
