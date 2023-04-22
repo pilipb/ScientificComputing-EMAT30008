@@ -2,12 +2,13 @@ import numpy as np
 from math import ceil
 from bvp_solver import ODE
 from helpers import boundary
+from scipy.optimize import root
 
 class PDE():
     '''
     Class to store the parameters of the ODE
     '''
-    def __init__(self, f, m, c, k, q, bound_type, alpha, beta, a, b, *args):
+    def __init__(self, f, m,  q, bound_type, alpha, beta, a, b, *args):
         '''
         Second order ODE of the form:
         du/dt = m*u'' + q(x,u,t,args)
@@ -124,10 +125,14 @@ class Solver():
             The solution to the PDE [u(x,t)]
 
         '''
+
+
         if self.method == 'solve_ivp':
             u = self.solveivp_solve()
         elif self.method == 'explicit_euler':
             u = self.explicit_solve()
+        elif self.method == 'implicit_euler':
+            u = self.implicit_solve()
 
         return u
     
@@ -192,6 +197,47 @@ class Solver():
 
         return u
     
+    def implicit_solve(self):
+        '''
+        Solve the PDE using the implicit Euler method using root 
+            
+        '''
+        # function to solve but as a function of u, t, and args
+        def F(u, t, *args):
+            # unpack the args
+            D = args[0][0]
+            A_ = args[0][1]
+            b_ = args[0][2]
+            q = args[0][3]
+
+            # calculate the source term
+            if callable(q):
+                qval = q(self.x_int, t, u, *args[0][4:])
+            else:
+                qval = q
+
+            # apply the PDE
+            return (D / self.dx**2) * (A_ @ u + b_) + qval 
+        
+
+        # loop over the steps
+        for n in range(0, self.N_time):
+                
+            # define the function to solve (F(u_n+1) = 0 (removing the time dependence)
+            def F_solve(u):
+                return F(u, self.t[n], (self.PDE.m, self.A_mat, self.b_vec, self.PDE.q, self.PDE.args)) - self.u[n,:]
+
+            # solve the function
+            sol = root(F_solve, self.u[n,:], method='hybr')
+            # extract the solution
+            self.u[n+1,:] = sol.x
+
+        # concatenate the boundary conditions
+        u = np.concatenate((alpha*np.ones((self.N_time+1,1)), self.u, beta*np.ones((self.N_time+1,1))), axis = 1).T
+        
+        return u
+    
+
 
         
 ##### TEST #####
@@ -201,10 +247,8 @@ if __name__ == '__main__':
 
     # define the ODE
     m = 0.5
-    c = 1
-    k = 1
 
-    q = lambda x, t, u, *args: 1
+    q = lambda x, t, u, *args: 0
     bound_type = 'DD'
     alpha = 0
     beta = 0
@@ -214,13 +258,13 @@ if __name__ == '__main__':
     f = lambda x: np.sin((np.pi*(x-a)/b-a))
 
     # create the PDE object
-    pde = PDE(f, m, c, k, q, bound_type, alpha, beta, a, b, *args)
+    pde = PDE(f, m, q, bound_type, alpha, beta, a, b, *args)
 
     # create the solver object
-    N = 10
-    method = 'explicit_euler'
-    t_final = 1
-    solver = Solver(pde, N, t_final, method)
+    N = 100
+    method = 'implicit_euler'
+    t_final = 0.001
+    solver = Solver(pde, N, t_final, method, CFL=2)
 
     # solve the ODE
     u = solver.solve()
@@ -229,7 +273,7 @@ if __name__ == '__main__':
     x = solver.x
 
     # plot the solution at 3 different times
-    for n in np.linspace(0, len(solver.t)-1, 5, dtype = int):
+    for n in np.linspace(0, len(solver.t)-1, 3, dtype = int):
 
         plt.plot(x, u[:,n], label = 't = {}'.format(solver.t[n]))
 
