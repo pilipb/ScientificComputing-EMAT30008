@@ -5,6 +5,9 @@ from shooting import shooting_setup
 from solve_to import solve_to
 
 '''
+
+FORMAT:
+
 results = continuation(myode,  # the ODE to use
     x0,  # the initial state
     par0,  # the initial parameters (as a list)
@@ -15,96 +18,108 @@ results = continuation(myode,  # the ODE to use
     solver=scipy.optimize.fsolve)  # the solver to use
     
     '''
+class Continuation:
+    def __init__(self, solver):
+        '''
+        Continuation class to solve ODEs and algebraic equations for finding roots in a parameter space
+
+        Parameters:
+        ----------------------------
+        solver - function:
+                the solver to use to solve the discretised equation (either fsolve or root)
+        
+        '''
+        self.solver = solver
+
+    # natural continuation will find the roots of the equation, then increment c and find the roots again
+    def nat_continuation(self, ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discret=None):
+        '''
+        Natural continuation method to increment a parameter and solve the ODE for the new parameter value
+        Parameters:
+        ----------------------------
+        ode - function: 
+                the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
+        x0 - array:
+                the initial value of the solution
+        p0 - list:
+                the initial values of the parameters
+        vary_p - int:
+                the index of the parameter to vary
+        step - float:
+                the size of the steps to take
+        max_steps - int:
+                the number of steps to take
+        discret - function:
+                the discretisation to use (either shooting_setup or linear)
+
+        Returns:
+        ----------------------------
+        X - array:
+                the solution of the equation for each parameter value
+        C - array:
+                the parameter values that were used to solve the equation
+
+        
+        '''
+        # initialize the solution
+        X = []
+        C = []
+
+        # discretise the ode
+        '''
+        if the function is an algebraic equation, then the discretisation is just the function itself
+        if the function is a differential equation, then the discretisation is calling shooting method
+        to make the F(x) = 0 that will be solved by the solver
+        
+        '''
+        param = p0
 
 
-# natural continuation will find the roots of the equation, then increment c and find the roots again
-def nat_continuation(ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discret=None, solver=scipy.optimize.fsolve):
-    '''
-    Natural continuation method to increment a parameter and solve the ODE for the new parameter value
-    Parameters:
-    ----------------------------
-    ode - function: 
-            the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
-    x0 - array:
-            the initial value of the solution
-    p0 - list:
-            the initial values of the parameters
-    vary_p - int:
-            the index of the parameter to vary
-    step - float:
-            the size of the steps to take
-    max_steps - int:
-            the number of steps to take
-    discret - function:
-            the discretisation to use (either shooting_setup or linear)
-    solver - function:
-            the solver to use (either scipy.optimize.fsolve or scipy.optimize.root)
-
-    Returns:
-    ----------------------------
-    X - array:
-            the solution of the equation for each parameter value
-    C - array:
-            the parameter values that were used to solve the equation
-
-    
-    '''
-    # initialize the solution
-    X = []
-    C = []
-
-    # discretise the ode
-    '''
-    if the function is an algebraic equation, then the discretisation is just the function itself
-    if the function is a differential equation, then the discretisation is calling shooting method
-    to make the F(x) = 0 that will be solved by the solver
-    
-    '''
-    param = p0
+        T = 10
 
 
-    T = 10
+        # check that the discret either a lambda function or a function
+        if not callable(discret):
+            raise ValueError("discretisation must be a function or lambda function")
+        
+        fun = discret(ode, x0, T=T, args = param )
+        if discret == shooting_setup:
+            u0 = np.append(x0, T)
+        else:
+            u0 = x0
 
+        sol = self.solver(fun, u0, args = (param,))
 
-    # check that the discret either a lambda function or a function
-    if not callable(discret):
-        raise ValueError("discretisation must be a function or lambda function")
-    
-    fun = discret(ode, x0, T=T, args = param )
-    if discret == shooting_setup:
-        u0 = np.append(x0, T)
-    else:
-        u0 = x0
-
-    sol = scipy.optimize.fsolve(fun, u0, args = (param,))
-
-    # append the solution
-    X.append(sol)
-    try:
-        C.append(param[vary_p])
-    except:
-        C.append(param)
-
-    num_steps = 0
-    # loop with incrementing c until reaching the limit
-    while num_steps < max_steps:
-        try:
-            param[vary_p] += step
-        except:
-            param+=step
-
-        sol = scipy.optimize.fsolve(fun, u0, args = (param))
-
+        # append the solution
         X.append(sol)
-
         try:
             C.append(param[vary_p])
         except:
             C.append(param)
 
-        num_steps += 1
+        num_steps = 0
+        # loop with incrementing c until reaching the limit
+        while num_steps < max_steps:
+            try:
+                param[vary_p] += step
+            except:
+                param+=step
 
-    return X, C
+            sol = self.solver(fun, u0, args = (param))
+
+            X.append(sol)
+
+            try:
+                C.append(param[vary_p])
+            except:
+                C.append(param)
+
+            num_steps += 1
+
+        return X, C
+
+
+
 
 
 ####################### EXAMPLES ############################
@@ -124,8 +139,10 @@ def linear(x, x0, T, args):
 
 print('\nFirst example: cubic equation with linear discretisation')
 
+cont = Continuation(solver=scipy.optimize.fsolve)
+
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-X, C = nat_continuation(cubic, x0, -2, vary_p = 0, step = 0.1, max_steps = 40, discret=linear, solver=scipy.optimize.fsolve)
+X, C = cont.nat_continuation(cubic, x0, -2, vary_p = 0, step = 0.1, max_steps = 40, discret=linear)
 
 # plot the solution
 plt.figure()
@@ -185,7 +202,7 @@ p = [myu, omega]
 print('\nSecond example: Hopf Bifurcation with shooting discretisation')
 
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-X, C = nat_continuation(hopf_polar, x0, p, vary_p = 0, step = 0.01, max_steps = 150, discret=shooting_setup, solver=scipy.optimize.fsolve)
+X, C = cont.nat_continuation(hopf_polar, x0, p, vary_p = 0, step = 0.01, max_steps = 150, discret=shooting_setup)
 
 # split the X into x, y and period at each parameter value
 print('\nX = ', X)
