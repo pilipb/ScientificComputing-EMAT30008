@@ -51,7 +51,7 @@ def rk4_step(f, y0, t0, delta_t, args):
 
     '''
     # run error check
-    # error_check(f, y0, t0, delta_t, args = args)
+    error_check(f, y0, t0, delta_t, args = args)
 
 
     k1 = delta_t * f( t0, y0, args)
@@ -99,20 +99,21 @@ def heun_step(f, y0, t0, delta_t, args):
 def error_check(f, y0, t0, delta_t, t1=None, method=None, args=None):
     if not callable(f):
         raise TypeError('f must be a function')
-    # if not isinstance(y0, (np.ndarray, list)):
-    #     raise ValueError('y0 must be a numpy array or list')
-    # if not isinstance(t0, (int, float)):
-    #     raise ValueError('t0 must be a number')
+    try:
+        f(t0, y0, args)
+    except:
+        raise ValueError('function inputs incorrect')
+
     if not isinstance(delta_t, (int, float)):
         raise TypeError('delta_t must be a number')
-    if t1 is not None:
-        if not isinstance(t1, (int, float)):
-            raise ValueError('t1 must be a number')
-        elif t1 < t0:
-            raise ValueError('t1 must be greater than t0')
+    
+    if not isinstance(t0, (int, float)):
+        raise TypeError('t1 must be a number')
+    
     if method is not None:
         if not isinstance(method, str):
             raise TypeError('method must be a string')
+        
     if args is not None:
         if not isinstance(args, (np.ndarray, list, tuple)):
             raise TypeError('args must be a numpy array or list')
