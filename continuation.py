@@ -16,9 +16,6 @@ results = continuation(myode,  # the ODE to use
     
     '''
 
-# have an algebraic cubic equation
-
-# x^3 - x + c = 0
 
 # natural continuation will find the roots of the equation, then increment c and find the roots again
 def nat_continuation(ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discret=None, solver=scipy.optimize.fsolve):
@@ -109,6 +106,8 @@ def nat_continuation(ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discr
 
     return X, C
 
+
+####################### EXAMPLES ############################
 
 # define the cubic equation
 def cubic(x, *args):
