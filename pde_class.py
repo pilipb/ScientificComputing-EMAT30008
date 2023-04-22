@@ -118,6 +118,11 @@ class Solver():
         '''
         Solve the PDE using the specified method
 
+        Returns
+        -------
+        u : np.array
+            The solution to the PDE [u(x,t)]
+
         '''
         if self.method == 'solve_ivp':
             u = self.solveivp_solve()
@@ -186,6 +191,8 @@ class Solver():
         u = np.concatenate((alpha*np.ones((self.N_time+1,1)), u, beta*np.ones((self.N_time+1,1))), axis = 1).T
 
         return u
+    
+
         
 ##### TEST #####
 
