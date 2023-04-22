@@ -309,7 +309,7 @@ class Solver():
 
         return self.u
     
-def profile(PDE, N, t_final, plot = True):
+def profile(PDE, N, t_final):
     '''
     return the profile of the solvers using cProfile
     
@@ -318,9 +318,10 @@ def profile(PDE, N, t_final, plot = True):
     import pstats
 
     stats = []
+    methods = ['Euler', 'RK4', 'Heun','implicit_euler', 'crank_nicolson', 'imex_euler']
 
     # loop through methods and profile
-    for method in ['Euler', 'RK4', 'Heun','implicit_euler', 'crank_nicolson', 'imex_euler']:
+    for method in methods:
 
         # profile the function
         pr = cProfile.Profile()
@@ -334,22 +335,10 @@ def profile(PDE, N, t_final, plot = True):
         ps = pstats.Stats(pr).sort_stats('tottime')
         stats.append(ps)
 
-    # plot the performance results
-    import matplotlib.pyplot as plt
-    import numpy as np
+    return stats, methods
 
-    if plot:
-        # plot the results as a bar chart
-        fig, ax = plt.subplots(1,1, figsize = (10,5))
-        ax.set_title('Performance of different solvers')
-        ax.set_ylabel('Time (s)')
-        ax.set_xlabel('Solver')
-        ax.set_xticks(np.arange(0,6))
-        ax.set_xticklabels(['Euler', 'RK4', 'Heun', 'Implicit Euler', 'Crank-Nicolson', 'IMEX Euler'])
-        ax.bar(np.arange(0,6), [s.total_tt for s in stats])
-        plt.show()
 
-    return stats
+
 
 
 
@@ -401,8 +390,8 @@ if __name__ == '__main__':
     # for each solver, print the top 10 functions
     for s in stats:
         s.print_stats(10)
-        
- 
+
+
     
 
     
