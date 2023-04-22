@@ -6,7 +6,7 @@ from scipy.optimize import root
 
 class PDE():
     '''
-    Class to store the parameters of the ODE
+    Class to store the parameters of the PDE
     '''
     def __init__(self, f, m,  q, bound_type, alpha, beta, a, b, *args):
         '''
