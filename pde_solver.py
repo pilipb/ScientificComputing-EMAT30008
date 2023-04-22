@@ -6,41 +6,39 @@ from scipy.optimize import root
 
 class PDE():
     '''
-    Class to store the parameters of the PDE
+    Second order ODE of the form:
+    du/dt = m*u'' + q(x,u,t,args)
+
+    with starting conditions:
+    u(a,t) = alpha
+    u(b,t) = beta
+
+    u(x,0) = f(x)
+
+    Parameters
+    ----------
+    f : function
+        The initial condition.
+    m : float
+        2nd order coefficient.
+    q : function
+        Function of x, t and u. (source term)
+    bound_type : string
+        The type of boundary condition: DD, DN, DR, ND, NN, NR, RD, RN, RR (Dirichlet, Neumann, Robin)
+    alpha : float
+        The left boundary condition.
+    beta : float
+        The right boundary condition.
+    a : float
+        The left edge of the domain.
+    b : float
+        The right edge of the domain.
+    args: tuple
+        The arguments for the function q(x,u,args)
+
     '''
     def __init__(self, f, m,  q, bound_type, alpha, beta, a, b, *args):
-        '''
-        Second order ODE of the form:
-        du/dt = m*u'' + q(x,u,t,args)
-
-        with starting conditions:
-        u(a,t) = alpha
-        u(b,t) = beta
-
-        u(x,0) = f(x)
-
-        Parameters
-        ----------
-        f : function
-            The initial condition.
-        m : float
-            2nd order coefficient.
-        q : function
-            Function of x, t and u. (source term)
-        bound_type : string
-            The type of boundary condition: DD, DN, DR, ND, NN, NR, RD, RN, RR (Dirichlet, Neumann, Robin)
-        alpha : float
-            The left boundary condition.
-        beta : float
-            The right boundary condition.
-        a : float
-            The left edge of the domain.
-        b : float
-            The right edge of the domain.
-        args: tuple
-            The arguments for the function q(x,u,args)
-
-        '''
+        
         self.f = f
         self.m = m
         self.q = q
@@ -53,23 +51,20 @@ class PDE():
 
 class Solver():
     '''
-    Solver class for the PDE
-    
+    Class to solve the ODE
+
+    Parameters
+    ----------
+    PDE : PDE object
+        The PDE object to be solved.
+    N : int
+        The number of interior points.
+    method : string
+        The method to solve the ODE:
+
     '''
     def __init__(self, PDE, N, t_final, method, CFL=0.49):
-        '''
-        Class to solve the ODE
-
-        Parameters
-        ----------
-        PDE : PDE object
-            The PDE object to be solved.
-        N : int
-            The number of interior points.
-        method : string
-            The method to solve the ODE:
-
-        '''
+        
         self.PDE = PDE
         self.N = N
         self.t_final = t_final

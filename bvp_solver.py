@@ -6,37 +6,35 @@ import matplotlib.pyplot as plt
 
 class ODE():
     '''
-    Class to store the parameters of the ODE
+    Second order ODE of the form:
+    m*u'' + c*u' + k * q(x,u,t,args) = 0
+
+    Parameters
+    ----------
+    m : float
+        2nd order coefficient.
+    c : float
+        1st order coefficient.
+    k : float
+        0th order coefficient.
+    q : function
+        Function of x and u. (source term)
+    bound_type : string
+        The type of boundary condition: DD, DN, DR, ND, NN, NR, RD, RN, RR (Dirichlet, Neumann, Robin)
+    alpha : float
+        The left boundary condition.
+    beta : float
+        The right boundary condition.
+    a : float
+        The left edge of the domain.
+    b : float
+        The right edge of the domain.
+    args: tuple
+        The arguments for the function q(x,u,args)
+
     '''
     def __init__(self, m, c, k, q, bound_type, alpha, beta, a, b, *args):
-        '''
-        Second order ODE of the form:
-        m*u'' + c*u' + k * q(x,u,t,args) = 0
-
-        Parameters
-        ----------
-        m : float
-            2nd order coefficient.
-        c : float
-            1st order coefficient.
-        k : float
-            0th order coefficient.
-        q : function
-            Function of x and u. (source term)
-        bound_type : string
-            The type of boundary condition: DD, DN, DR, ND, NN, NR, RD, RN, RR (Dirichlet, Neumann, Robin)
-        alpha : float
-            The left boundary condition.
-        beta : float
-            The right boundary condition.
-        a : float
-            The left edge of the domain.
-        b : float
-            The right edge of the domain.
-        args: tuple
-            The arguments for the function q(x,u,args)
-
-        '''
+        
         self.m = m
         self.c = c
         self.k = k
@@ -49,20 +47,20 @@ class ODE():
         self.args = args
 
 class Solver():
+    '''
+    Class to solve the ODE
+
+    Parameters
+    ----------
+    ODE : ODE object
+        The ODE object to be solved.
+    N : int
+        The number of interior points.
+    method : string
+        The method to solve the ODE: .
+
+    ''' 
     def __init__(self, ODE, N, method):
-        '''
-        Class to solve the ODE
-
-        Parameters
-        ----------
-        ODE : ODE object
-            The ODE object to be solved.
-        N : int
-            The number of interior points.
-        method : string
-            The method to solve the ODE: .
-
-        '''
 
         self.ODE = ODE
         self.N = N
