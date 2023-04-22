@@ -10,7 +10,7 @@ class PDE():
     def __init__(self, f, m, c, k, q, bound_type, alpha, beta, a, b, *args):
         '''
         Second order ODE of the form:
-        du/dt = m*u'' + c*u' + k * q(x,u,t,args)
+        du/dt = m*u'' + q(x,u,t,args)
 
         with starting conditions:
         u(a,t) = alpha
@@ -24,10 +24,6 @@ class PDE():
             The initial condition.
         m : float
             2nd order coefficient.
-        c : float
-            1st order coefficient.
-        k : float
-            0th order coefficient.
         q : function
             Function of x, t and u. (source term)
         bound_type : string
@@ -46,8 +42,6 @@ class PDE():
         '''
         self.f = f
         self.m = m
-        self.c = c
-        self.k = k
         self.q = q
         self.bound_type = bound_type
         self.alpha = alpha
