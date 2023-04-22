@@ -63,7 +63,7 @@ def nat_continuation(ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discr
     param = p0
 
 
-    T = 10
+    T = 0
 
 
     # check that the discret either a lambda function or a function
@@ -118,7 +118,7 @@ def cubic(x, *args):
 # define the initial conditions
 x0 = 1
 
-# define the limit of c
+# define the linear discretisation
 def linear(x, x0, T, args):
     return x 
 
@@ -149,6 +149,18 @@ def hopf(t, X, *args):
 
     return np.array([dxdt, dydt])
 
+def hopf_polar(t, X, *args):
+
+    myu, omega = args[0]
+
+    r = X[0]
+    theta = X[1]
+
+    drdt = r*(myu - r**2)
+    dthetadt = omega
+
+    return np.array([drdt, dthetadt])
+
 # define new ode
 a = 1
 d = 0.1
@@ -164,23 +176,24 @@ def ode(t, Y, args):
     return np.array([dxdt, dydt])
 
 # define the initial conditions
-x0 = [0.1,0.1]
+x0 = [0,np.pi]
 
 # define parameter
-p = 2
+myu, omega = -1, 2*np.pi
+p = [myu, omega]
 
 print('\nSecond example: Hopf Bifurcation with shooting discretisation')
 
 # solve the system of equations for the initial conditions [x0, y0, ... ] and period T that satisfy the boundary conditions
-X, C = nat_continuation(hopf, x0, p, vary_p = 0, step = -0.2, max_steps = 16, discret=shooting_setup, solver=scipy.optimize.fsolve)
+X, C = nat_continuation(hopf_polar, x0, p, vary_p = 0, step = 0.2, max_steps = 10, discret=shooting_setup, solver=scipy.optimize.fsolve)
 
 # split the X into x, y and period at each parameter value
-print('X = ', X)
-print('C = ', C)
+print('\nX = ', X)
+print('\nC = ', C)
 
 # extract the period (the last element of the solution)
 T = [x[-1] for x in X] 
-print('T = ', T)
+print('\nT = ', T)
 
 
 # plot the period
