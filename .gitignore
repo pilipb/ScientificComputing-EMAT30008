@@ -4,7 +4,4 @@
 .pytest_cache
 __pycache__
 .gitattributes
-
-
-
-
+__pycache__/*
