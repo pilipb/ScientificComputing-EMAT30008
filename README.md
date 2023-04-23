@@ -3,7 +3,7 @@ Scientific Computing Module
 Phil Blecher - xq19351
 Jan - May 2023
 
-This module looks at implementing advanced numerical methods for the solution of real-world problems and creating production-standard code.
+This module looks at implementing advanced numerical methods for the solution of real-world problems and creating production-standard code. For a brief example of the implementation of the modules in this folder look through the report.ipynb notebook.
 
 ## Contents
 1. solvers.py
