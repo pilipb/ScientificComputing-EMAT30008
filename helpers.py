@@ -133,7 +133,7 @@ import cProfile, pstats
 def help_prof(N, sparse, Solver, pde):
     pr = cProfile.Profile()
     pr.enable()
-    solver = Solver(pde, N=N, t_final=1, method='crank-nicolson', sparse=sparse)
+    solver = Solver(pde, N=N, t_final=1, method='crank_nicolson', sparse=sparse)
     u = solver.solve()
     try:
         nbytes = solver.A_mat.nbytes
