@@ -3,34 +3,47 @@ from solvers import *
 def solve_to(f, y0, t0, t1, delta_t=0.01, method='RK4', args = None):
 
     '''
-    solve_to method will solve ODE from time t0 to t1 with a given step size
-    using a given method from the solvers.py file
+        solve_to method will solve ODE from time t0 to t1 with a given step size
+        using a given method from the solvers.py file
 
-    Parameters
-    ----------------------------
-    f : function
-            the function to be integrated (with inputs (t, Y, *args)) in first order form of n dimensions
-    y0 : array
-            the initial value of the solution
-    t0 : float
-            the initial value of time
-    t1 : float  
-            the end time
-    delta_t : float
-            the step size
-    method : string
-            the method to be used to solve the ODE
-    args : array
-            the arguments to be passed to the function f
-            or None if no arguments are to be passed
+        Parameters
+        ----------------------------
+        f : function
+                the function to be integrated (with inputs (t, Y, *args)) in first order form of n dimensions
+        y0 : array
+                the initial value of the solution
+        t0 : float
+                the initial value of time
+        t1 : float  
+                the end time
+        delta_t : float
+                the step size
+        method : string
+                the method to be used to solve the ODE
+        args : array
+                the arguments to be passed to the function f
+                or None if no arguments are to be passed
 
-    Returns
-    ----------------------------
-    Y : array
-            the solution at the next step time step
-    t : float
-            the next time step
+        Returns
+        ----------------------------
+        Y : array
+                the solution at the next step time step
+        t : float
+                the next time step
 
+        Examples
+        ----------------------------
+        >>> def f(t, y, args):
+        ...     return y
+        >>> y0 = 1
+        >>> t0 = 0
+        >>> t1 = 1
+        >>> delta_t = 0.01
+        >>> method = 'RK4'
+        >>> args = None
+        >>> Y, t = solve_to(f, y0, t0, t1, delta_t, method, args)
+
+        
     '''
 
     # run error check

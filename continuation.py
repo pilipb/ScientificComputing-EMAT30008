@@ -27,6 +27,19 @@ class Continuation:
         ----------------------------
         solver - function:
                 the solver to use to solve the discretised equation (either fsolve or root)
+
+        Returns:
+        ----------------------------
+        None
+
+        Examples:
+        ----------------------------
+        >>> cont = Continuation( solver=scipy.optimize.fsolve )
+        
+        >>> X, C = cont.nat_continuation(myode, x0, par0, vary_par=0, step_size=0.1, max_steps=100, discretisation=shooting)
+        >>> X, C = cont.nat_continuation(myode, x0, par0, vary_par=0, step_size=0.1, max_steps=100, discretisation=None)
+
+
         
         '''
         self.solver = solver

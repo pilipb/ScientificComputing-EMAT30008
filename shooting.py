@@ -10,6 +10,25 @@ class Discretisation():
     def __init__(self):
         '''
         Class to discretise the ODEs
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+
+        Examples
+        --------
+        >>> discret = Discretisation()
+        >>> fun = discret.shooting_setup(f, y0, T= 0, args = None)
+        >>> u0, T0 = shooting_solve(fun, u0)
+
+        Finding a limit cycle using a shooting method
+        
+        >>> Y,t = solve_to(f, u0, 0, T0, 0.01, 'RK4', args=b)
+    
         
         '''
         pass
