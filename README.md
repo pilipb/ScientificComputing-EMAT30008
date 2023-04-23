@@ -67,10 +67,29 @@ Unit tests for the solvers - run using pytest and ci.yaml
 12. requirements.txt
 
 ## Installation
+
 To install the module, clone the repository and run the following command in the terminal:
 ```bash
 pip install -r requirements.txt
 ```
+
+## Overview
+
+The module is split into;
+- solvers.py
+- solve_to.py
+- shooting.py
+- continuation.py
+- bvp_solver.py
+- pde_solver.py
+- helpers.py
+- report.ipynb
+- test_equations.py
+- unit_test.py
+
+
+
+
 
 
 
