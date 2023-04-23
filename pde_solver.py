@@ -38,6 +38,11 @@ class PDE():
     args: tuple
         The arguments for the function q(x,u,args)
 
+    Examples
+    --------
+    >>> PDE(lambda x: 0, 1, lambda x, t, u: 0, 'DD', 0, 0, 0, 1)
+
+
     '''
     def __init__(self, f, m,  q, bound_type, alpha, beta, a, b, *args):
         
@@ -53,18 +58,31 @@ class PDE():
 
 class Solver():
     '''
-        Class to solve the ODE
+    Class to solve the ODE
 
-        Parameters
-        ----------
-        PDE : PDE object
-            The PDE object to be solved.
-        N : int
-            The number of interior points.
-        method : string
-            The method to solve the ODE:
+    Parameters
+    ----------
+    PDE : PDE object
+        The PDE object to be solved.
+    N : int
+        The number of interior points.
+    method : string
+        The method to solve the ODE:
 
-        '''
+    Returns
+    -------
+    u : np.array
+        The solution to the PDE.
+
+    Examples
+    --------
+    >>> PDE(lambda x: 0, 1, lambda x, t, u: 0, 'DD', 0, 0, 0, 1)
+    >>> solver = Solver(PDE, 100, 1, 'solve_ivp')
+    >>> u = solver.solve()
+    >>> t = solver.t
+    >>> x = solver.x
+
+    '''
     def __init__(self, PDE, N, t_final, method, CFL=0.49, sparse=False):
         
         self.PDE = PDE
@@ -123,7 +141,16 @@ class Solver():
         u : np.array
             The solution to the PDE [u(x,t)]
 
+        Examples
+        --------
+        >>> PDE(lambda x: 0, 1, lambda x, t, u: 0, 'DD', 0, 0, 0, 1)
+        >>> solver = Solver(PDE, 100, 1, 'solve_ivp')
+        >>> u = solver.solve()
+
+
+
         '''
+
 
 
         if self.method == 'solve_ivp':

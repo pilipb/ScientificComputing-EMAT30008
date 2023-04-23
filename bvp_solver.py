@@ -32,6 +32,11 @@ class ODE():
     args: tuple
         The arguments for the function q(x,u,args)
 
+    Examples
+    --------
+    >>> ODE(1, 0, 1, lambda x, u: 0, 'DD', 0, 0, 0, 1)
+
+
     '''
     def __init__(self, m, c, k, q, bound_type, alpha, beta, a, b, *args):
         
@@ -59,6 +64,13 @@ class Solver():
     method : string
         The method to solve the ODE: .
 
+    Examples
+    --------
+    >>> ODE(1, 0, 1, lambda x, u: 0, 'DD', 0, 0, 0, 1)
+    >>> solver = Solver(ODE, 100, 'scipy')
+    >>> u = solver.solve()
+    >>> x = solver.x
+
     ''' 
     def __init__(self, ODE, N, method):
 
@@ -80,6 +92,18 @@ class Solver():
     def solve(self):
         '''
         Solve the ODE using the method specified in self.method
+
+        Returns
+        -------
+        u : np.array
+            The solution to the ODE
+
+        Examples
+        --------
+        >>> solver.solve() 
+
+
+        
         '''
 
         if self.method == 'scipy':
@@ -100,6 +124,7 @@ class Solver():
         -------
         q_vec : np.array
             The q vector for the ODE
+
         '''
         # define the vector q as a function of u but length N-1
         if callable(self.ODE.q):
