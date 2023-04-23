@@ -127,15 +127,17 @@ class Solver():
 
 
         if self.method == 'solve_ivp':
-            u = self.solveivp_solve()
+            self.u = self.solveivp_solve()
         elif self.method == 'implicit_euler':
-            u = self.implicit_solve()
+            self.u = self.implicit_solve()
         elif self.method == 'crank_nicolson':
-            u = self.crank_nicolson_solve()
+            self.u = self.crank_nicolson_solve()
         elif self.method == 'imex_euler':
-            u = self.imex_euler_solve()
+            self.u = self.imex_euler_solve()
         elif self.method in ['Euler', 'RK4', 'Heun']:
-            u = self.custom_solve(self.method)
+            self.u = self.custom_solve(self.method)
+        else:
+            raise ValueError('Method not recognised')
 
         return self.u
     
@@ -149,6 +151,8 @@ class Solver():
 
         if self.sparse:
             raise ValueError('solve_ivp does not support sparse matrices')
+        
+        print('Solving using solve_ivp')
 
         # define the PDE - different form for solve_ivp
         if callable(self.PDE.q):
@@ -179,8 +183,11 @@ class Solver():
         Solve the PDE using the implicit Euler method using root
             
         '''
+        
         if self.sparse:
             raise ValueError('implicit_solve does not support sparse matrices')
+        
+        print('Solving using the implicit Euler method')
 
         u = self.u
         # function to solve but as a function of u, t, and args
@@ -198,7 +205,7 @@ class Solver():
                 qval = q
 
             # apply the PDE
-            return (D / self.dx**2) * (A_ @ u + b_) + qval 
+            return (D / self.dx**2) * (A_ @ u + b_) + qval - u
         
 
         # loop over the steps
@@ -206,15 +213,15 @@ class Solver():
                 
             # define the function to solve (F(u_n+1) = 0 (removing the time dependence)
             def F_solve(u):
-                return F(u, self.t[n], (self.PDE.m, self.A_mat, self.b_vec, self.PDE.q, self.PDE.args)) - self.u[n,:]
+                return F(u, self.t[n], (self.PDE.m, self.A_mat, self.b_vec, self.PDE.q, self.PDE.args)) - u
 
             # solve the function
-            sol = root(F_solve, self.u[n,:], method='hybr')
+            sol = root(F_solve, u[n,:], method='hybr')
             # extract the solution
-            self.u[n+1,:] = sol.x
+            u[n+1,:] = sol.x
 
         # concatenate the boundary conditions
-        self.u = np.concatenate((self.PDE.alpha*np.ones((self.N_time+1,1)), self.u, self.PDE.beta*np.ones((self.N_time+1,1))), axis = 1).T
+        self.u = np.concatenate((self.PDE.alpha*np.ones((self.N_time+1,1)), u, self.PDE.beta*np.ones((self.N_time+1,1))), axis = 1)
         
         return self.u
     
@@ -228,6 +235,8 @@ class Solver():
         if callable(self.PDE.q):
             raise ValueError('q must be zero or constant for the Crank-Nicolson method')
         
+        print('Solving using the Crank-Nicolson method')
+        
         u = self.u
 
         # define the matrices for the implicit method
@@ -235,12 +244,10 @@ class Solver():
         if self.sparse:
             A = sp.eye(self.N-1) - C/2 * self.A_mat
             b = A.dot(u[-1,:]) + C/2 * (self.b_vec + self.PDE.q * np.ones(self.N-1))
-            print(b.shape)
 
         else:
             A = np.eye(self.N-1) - C/2 * self.A_mat
             b = A * u[-1,:] + C/2 * (self.b_vec + self.PDE.q * np.ones(self.N-1))
-            print(b.shape)
 
         # loop over the steps
         if self.sparse:
@@ -276,6 +283,7 @@ class Solver():
         if self.sparse:
             raise ValueError('imex_euler_solve does not currently support sparse matrices')
         # assume q is a function of x, t, u, and args
+        print('Solving using the IMEX Euler method')
 
         # implicit linear solver
         # define the matrices for the implicit method
@@ -314,6 +322,8 @@ class Solver():
 
         if self.sparse:
             raise ValueError('custom solvers do not support sparse matrices')
+        
+        print('Solving using the ' + option + ' method')
 
         # function to solve but as a function of u, t, and args
         def PDE_solve(t, u , *args):
