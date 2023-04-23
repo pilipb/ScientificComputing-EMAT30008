@@ -151,8 +151,13 @@ class Solver():
             raise ValueError('solve_ivp does not support sparse matrices')
 
         # define the PDE - different form for solve_ivp
-        def PDE_ivp(t, u, D, A_, b_, q, *args):
-            return (D / self.dx**2) * (A_ @ u + b_) + q(self.x_int,t, u, *args)
+        if callable(self.PDE.q):
+            def PDE_ivp(t, u, D, A_, b_, q, *args):
+                return (D / self.dx**2) * (A_ @ u + b_) + q(self.x_int,t, u, *args)
+        else:
+            q_vec = self.PDE.q * np.ones(self.N-1)
+            def PDE_ivp(t, u, D, A_, b_, q, *args):
+                return (D / self.dx**2) * (A_ @ u + b_) + q_vec
 
 
         sol = solve_ivp(PDE_ivp, (0, self.t_final), self.PDE.f(self.x_int), args=(self.PDE.m, self.A_mat, self.b_vec, self.PDE.q, self.PDE.args))
