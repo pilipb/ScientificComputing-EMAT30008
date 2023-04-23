@@ -1,6 +1,6 @@
 import numpy as np
 
-def boundary(alpha, beta, N, dx, type):
+def boundary(alpha, beta, N, dx, type, sparse=False):
     '''
     This function returns the boundary condition matrix and vector for a given boundary condition type
 
@@ -58,6 +58,10 @@ def boundary(alpha, beta, N, dx, type):
     elif type[1] == 'R':
         b[-1] = 2*beta*dx
         A[-2, -1] = -2*(1+beta*dx)/dx
+
+    if sparse:
+        import scipy.sparse as sparse
+        A = sparse.csr_matrix(A)
 
     return A, b
 

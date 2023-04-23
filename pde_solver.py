@@ -3,6 +3,8 @@ from math import ceil
 from bvp_solver import ODE
 from helpers import boundary
 from scipy.optimize import root
+from scipy.sparse import linalg
+import scipy.sparse as sp
 
 class PDE():
     '''
@@ -63,13 +65,15 @@ class Solver():
             The method to solve the ODE:
 
         '''
-    def __init__(self, PDE, N, t_final, method, CFL=0.49):
+    def __init__(self, PDE, N, t_final, method, CFL=0.49, sparse=False):
         
         self.PDE = PDE
         self.N = N
         self.t_final = t_final
         self.method = method
         self.CFL = CFL
+        self.sparse = sparse
+
 
         # create the grid (space discretisation)
         self.x = np.linspace(PDE.a, PDE.b, N+1)
@@ -86,7 +90,7 @@ class Solver():
         self.u[0,:] = self.PDE.f(self.x_int)
 
         # create the matrix A and vector b
-        self.A_mat, self.b_vec = boundary(PDE.alpha, PDE.beta, N, self.dx, PDE.bound_type)
+        self.A_mat, self.b_vec = boundary(PDE.alpha, PDE.beta, N, self.dx, PDE.bound_type, sparse=sparse)
 
 
     def q_vector(self, x, t, u, *args):
@@ -142,9 +146,13 @@ class Solver():
         '''
         from scipy.integrate import solve_ivp
 
+        if self.sparse:
+            raise ValueError('solve_ivp does not support sparse matrices')
+
         # define the PDE - different form for solve_ivp
         def PDE_ivp(t, u, D, A_, b_, q, *args):
             return (D / self.dx**2) * (A_ @ u + b_) + q(self.x_int,t, u, *args)
+
 
         sol = solve_ivp(PDE_ivp, (0, self.t_final), self.PDE.f(self.x_int), args=(self.PDE.m, self.A_mat, self.b_vec, self.PDE.q, self.PDE.args))
 
@@ -165,6 +173,9 @@ class Solver():
         Solve the PDE using the implicit Euler method using root
             
         '''
+        if self.sparse:
+            raise ValueError('implicit_solve does not support sparse matrices')
+
         u = self.u
         # function to solve but as a function of u, t, and args
         def F(u, t, *args):
@@ -206,6 +217,7 @@ class Solver():
         Solve the PDE using the Crank-Nicolson method (linear only)
             
         '''
+
         # check that q is zero or constant
         if callable(self.PDE.q):
             raise ValueError('q must be zero or constant for the Crank-Nicolson method')
@@ -214,17 +226,34 @@ class Solver():
 
         # define the matrices for the implicit method
         C = self.dt * self.PDE.m / self.dx**2
-        A = np.eye(self.N-1) - C/2 * self.A_mat
-        b = A * u[-1,:] + C/2 * (self.b_vec + self.PDE.q * np.ones(self.N-1))
+        if self.sparse:
+            A = sp.eye(self.N-1) - C/2 * self.A_mat
+            b = A.dot(u[-1,:]) + C/2 * (self.b_vec + self.PDE.q * np.ones(self.N-1))
+            print(b.shape)
+
+        else:
+            A = np.eye(self.N-1) - C/2 * self.A_mat
+            b = A * u[-1,:] + C/2 * (self.b_vec + self.PDE.q * np.ones(self.N-1))
+            print(b.shape)
 
         # loop over the steps
-        for n in range(0, self.N_time):
-                
-            u[n+1,:] = np.linalg.solve(A, b[-1,:])
+        if self.sparse:
+            for n in range(0, self.N_time):
 
-            # update the boundary conditions
-            u[n+1,0] = self.PDE.alpha
-            u[n+1,-1] = self.PDE.beta
+                u[n+1,:] = sp.linalg.spsolve(A, b[:])
+
+                # update the boundary conditions
+                u[n+1,0] = self.PDE.alpha
+                u[n+1,-1] = self.PDE.beta
+
+        else:
+            for n in range(0, self.N_time):
+        
+                u[n+1,:] = np.linalg.solve(A, b[-1,:])
+
+                # update the boundary conditions
+                u[n+1,0] = self.PDE.alpha
+                u[n+1,-1] = self.PDE.beta
 
         # concatenate the boundary conditions - for plotting
         self.u = np.concatenate((self.PDE.alpha*np.ones((self.N_time+1,1)), u, self.PDE.beta*np.ones((self.N_time+1,1))), axis = 1).T
@@ -365,31 +394,31 @@ if __name__ == '__main__':
     # create the PDE object
     pde = PDE(f, m, q, bound_type, alpha, beta, a, b, *args)
 
-    # # create the solver object
-    # N = 100
-    # method = 'explicit_euler'
-    # t_final = 0.01
-    # solver = Solver(pde, N, t_final, method, CFL=0.6)
+    # create the solver object
+    N = 100
+    method = 'crank_nicolson'
+    t_final = 0.01
+    solver = Solver(pde, N, t_final, method, CFL=0.6, sparse=True)
 
-    # # solve the ODE
-    # u = solver.solve()
+    # solve the ODE
+    u = solver.solve()
 
-    # # extract the grid
-    # x = solver.x
+    # extract the grid
+    x = solver.x
 
-    # # plot the solution at 3 different times
-    # for n in np.linspace(0, len(solver.t)-1, 10, dtype = int):
-    #     plt.plot(x, u[:,n], label = 't = {}'.format(solver.t[n]))
+    # plot the solution at 3 different times
+    for n in np.linspace(0, len(solver.t)-1, 10, dtype = int):
+        plt.plot(x, u[:,n], label = 't = {}'.format(solver.t[n]))
 
-    # plt.legend()
-    # plt.show()
+    plt.legend()
+    plt.show()
 
-    # profile the solvers
-    stats = profile(pde, 100, 0.01, plot = False)
+    # # profile the solvers
+    # stats = profile(pde, 100, 0.01, plot = False)
 
-    # for each solver, print the top 10 functions
-    for s in stats:
-        s.print_stats(10)
+    # # for each solver, print the top 10 functions
+    # for s in stats:
+    #     s.print_stats(10)
 
 
     
