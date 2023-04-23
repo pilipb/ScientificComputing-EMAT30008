@@ -179,7 +179,7 @@ class Solver():
         if self.sparse:
             raise ValueError('solve_ivp does not support sparse matrices')
         
-        print('Solving using solve_ivp')
+        # print('Solving using solve_ivp')
 
         # define the PDE - different form for solve_ivp
         if callable(self.PDE.q):
@@ -214,7 +214,7 @@ class Solver():
         if self.sparse:
             raise ValueError('implicit_solve does not support sparse matrices')
         
-        print('Solving using the implicit Euler method')
+        # print('Solving using the implicit Euler method')
 
         u = self.u
         # function to solve but as a function of u, t, and args
@@ -262,7 +262,7 @@ class Solver():
         if callable(self.PDE.q):
             raise ValueError('q must be zero or constant for the Crank-Nicolson method')
         
-        print('Solving using the Crank-Nicolson method')
+        # print('Solving using the Crank-Nicolson method')
         
         u = self.u
 
@@ -310,7 +310,7 @@ class Solver():
         if self.sparse:
             raise ValueError('imex_euler_solve does not currently support sparse matrices')
         # assume q is a function of x, t, u, and args
-        print('Solving using the IMEX Euler method')
+        # print('Solving using the IMEX Euler method')
 
         # implicit linear solver
         # define the matrices for the implicit method
@@ -350,7 +350,7 @@ class Solver():
         if self.sparse:
             raise ValueError('custom solvers do not support sparse matrices')
         
-        print('Solving using the ' + option + ' method')
+        # print('Solving using the ' + option + ' method')
 
         # function to solve but as a function of u, t, and args
         def PDE_solve(t, u , *args):
@@ -395,7 +395,7 @@ def profile(PDE, N, t_final):
     import pstats
 
     stats = []
-    methods = ['Euler', 'RK4', 'Heun','implicit_euler', 'crank_nicolson', 'imex_euler']
+    methods = ['Euler', 'RK4', 'Heun','implicit_euler', 'crank_nicolson', 'imex_euler', 'solve_ivp']
 
     # loop through methods and profile
     for method in methods:
