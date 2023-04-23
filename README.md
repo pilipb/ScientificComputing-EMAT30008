@@ -87,6 +87,15 @@ The module is split into;
 - test_equations.py
 - unit_test.py
 
+## Further Work
+
+Due to time constraints, the following features were not implemented:
+
+- The pseudo-arclength continuation method
+- other discretisation methods
+- allowing the use of sparse matrices for more PDE methods
+
+All of these changes will be simple to implement due to the structure of the code and the use of classes.
 
 
 
