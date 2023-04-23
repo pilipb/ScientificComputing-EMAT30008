@@ -67,7 +67,7 @@ class Solver():
     N : int
         The number of interior points.
     method : string
-        The method to solve the ODE:
+        The method to solve the ODE: solve_ivp, implicit_euler, crank_nicolson, imex_euler, euler, rk4, heun
 
     Returns
     -------

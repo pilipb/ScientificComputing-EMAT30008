@@ -131,6 +131,10 @@ def plot_help(plt, xlabel, ylabel, title=None, legend=False):
 # compare the implementation of crank-nicolson with sparse and dense matrices
 import cProfile, pstats
 def help_prof(N, sparse, Solver, pde):
+    '''
+    Profiling all solvers in the pde_solver.py file
+    
+    '''
     pr = cProfile.Profile()
     pr.enable()
     solver = Solver(pde, N=N, t_final=1, method='crank_nicolson', sparse=sparse)
