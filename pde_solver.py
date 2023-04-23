@@ -137,7 +137,7 @@ class Solver():
         elif self.method in ['Euler', 'RK4', 'Heun']:
             u = self.custom_solve(self.method)
 
-        return u
+        return self.u
     
     def solveivp_solve(self):
         '''
@@ -145,6 +145,7 @@ class Solver():
 
         '''
         from scipy.integrate import solve_ivp
+        u = self.u
 
         if self.sparse:
             raise ValueError('solve_ivp does not support sparse matrices')
