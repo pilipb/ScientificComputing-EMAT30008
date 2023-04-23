@@ -127,3 +127,18 @@ def plot_help(plt, xlabel, ylabel, title=None, legend=False):
 
     plt.grid()
     plt.show()
+
+# compare the implementation of crank-nicolson with sparse and dense matrices
+import cProfile, pstats
+def help_prof(N, sparse, Solver, pde):
+    pr = cProfile.Profile()
+    pr.enable()
+    solver = Solver(pde, N=N, t_final=1, method='crank-nicolson', sparse=sparse)
+    u = solver.solve()
+    try:
+        nbytes = solver.A_mat.nbytes
+    except:
+        nbytes = solver.A_mat.data.nbytes
+    pr.disable()
+    stats = pstats.Stats(pr)
+    return stats, nbytes
