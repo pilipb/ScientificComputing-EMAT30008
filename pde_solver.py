@@ -388,7 +388,30 @@ class Solver():
     
 def profile(PDE, N, t_final):
     '''
-    return the profile of the solvers using cProfile
+    Returns the profile of the solvers using cProfile
+
+    Parameters
+    ----------
+    PDE : PDE object
+        equation to solve.
+    N : int
+        number of points in the spatial domain.
+    t_final : float
+        final time to solve to.
+
+    Returns
+    -------
+    stats : list
+        list of pstats.Stats objects.
+    methods : list
+        list of methods used. [Euler, RK4, Heun, implicit_euler, crank_nicolson, imex_euler, solve_ivp]
+
+    Example
+    -------
+    >>> from pde import PDE, Solver
+    >>> pde = PDE(---)
+    >>> stats, methods = profile(pde, 100, 1)
+    >>> stats[0].print_stats()
     
     '''
     import cProfile
