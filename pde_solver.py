@@ -267,6 +267,8 @@ class Solver():
                 linear terms are solved implicitly (everything else)
             
         '''
+        if self.sparse:
+            raise ValueError('imex_euler_solve does not currently support sparse matrices')
         # assume q is a function of x, t, u, and args
 
         # implicit linear solver
@@ -303,6 +305,9 @@ class Solver():
     
         '''
         from solvers import euler_step, rk4_step, heun_step
+
+        if self.sparse:
+            raise ValueError('custom solvers do not support sparse matrices')
 
         # function to solve but as a function of u, t, and args
         def PDE_solve(t, u , *args):
