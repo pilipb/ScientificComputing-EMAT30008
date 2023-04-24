@@ -51,7 +51,7 @@ class Continuation:
         Parameters:
         ----------------------------
         ode - function: 
-                the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
+                the function to be solved (with inputs (y, *args)) 
         x0 - array:
                 the initial value of the solution
         p0 - list:
@@ -87,7 +87,7 @@ class Continuation:
         '''
 
         param = p0
-        T = 10
+        T = 0
 
         # if no discretisation is given, use the linear discretisation
         if discret is None:
@@ -97,8 +97,8 @@ class Continuation:
         if not callable(discret):
             raise TypeError('discretation must be a function or None')
 
-        # discretise the ode - creating the function that will be solved F(x) = 0
-        fun = discret(ode, x0, T=T, args = param)
+        # discretise the ode - creating the function that will be solved F(x) = 0 with the parameter
+        fun = discret(ode, x0, param)
 
         if discret == Discretisation().shooting_setup:
             u0 = np.append(x0, T)
@@ -106,9 +106,9 @@ class Continuation:
             u0 = x0
 
         # solve the discretised equation
-        sol = self.solver(fun, u0, args = (param,))
+        sol = self.solver(fun, u0, args=param)
 
-        # append the solution
+        # append the solution and the parameter value to the solution
         try:
             X.append(sol.x)
         except:
@@ -122,12 +122,13 @@ class Continuation:
         num_steps = 0
         # loop with incrementing c until reaching the limit
         while num_steps < max_steps:
+            fun = discret(ode, x0, param)
             try:
                 param[vary_p] += step
             except:
                 param+=step
 
-            sol = self.solver(fun, u0, args = (param,))
+            sol = self.solver(fun, u0, args=param)
             try:
                 X.append(sol.x)
             except:
@@ -142,13 +143,50 @@ class Continuation:
 
         return X, C
 
+    def ps_arc_continuation(self, ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discret=None):
+        '''
+        Pseudo arclength continuation method to increment a parameter and solve the ODE for the new parameter value
+        Parameters:
+        ----------------------------
+        ode - function: 
+                the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
+        x0 - array:
+                the initial value of the solution
+        p0 - list:
+                the initial values of the parameters
+        vary_p - int:
+                the index of the parameter to vary
+        step - float:
+                the size of the steps to take
+        max_steps - int:
+                the number of steps to take
+        discret - function:
+                the discretisation to use (either shooting_setup or linear (if None))
+
+        Returns:
+        ----------------------------
+        X - array:
+                the solution of the equation for each parameter value
+        C - array:
+                the parameter values that were used to solve the equation
+
+        
+        '''
+        # initialize the solution
+        X = []
+        C = []
+
+        raise NotImplementedError('This method is not yet implemented')
+
+
+        return X, C
+
 
 
 ####################### EXAMPLES ############################
 if __name__ == '__main__':
     # define the cubic equation
-    def cubic(x, *args):
-        
+    def cubic(x, args):
         c = args
         return x**3 - x + c
 
@@ -182,13 +220,13 @@ if __name__ == '__main__':
     # now test natural continuation with a differential equation - Hopf bifurcation
     def hopf(t, X, *args):
 
-        b = args[0]
+        b = args[0][0]
 
         x = X[0]
         y = X[1]
 
-        dxdt = b*x - y + x*(x**2 + y**2) - x*(x**2 + y**2)**2
-        dydt = x + b*y + y*(x**2 + y**2) - y*(x**2 + y**2)**2
+        dxdt = b*x - y - x*(x**2 + y**2) 
+        dydt = x + b*y - y*(x**2 + y**2)
 
         return np.array([dxdt, dydt])
 
@@ -219,16 +257,15 @@ if __name__ == '__main__':
         return np.array([dxdt, dydt])
 
     # define the initial conditions
-    x0 = [1, 1, 2]
+    x0 = [0.1, 0.1, 10]
 
     # define parameter
-    myu, omega = -1, 0.01
-    p = [myu, omega]
+    p = -1
 
     print('\nSecond example: Hopf Bifurcation with shooting discretisation')
 
     # natural continuation with shooting discretisation
-    X, C = cont.nat_continuation(hopf_polar, x0, p, vary_p = 0, step = 0.1, max_steps = 100, discret=discret.shooting_setup)
+    X, C = cont.nat_continuation(hopf, x0, p, vary_p = 0, step = 0.1, max_steps = 20, discret=discret.shooting_setup)
 
     # split the X into x, y and period at each parameter value
     # print('\nX = ', X)
