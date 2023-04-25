@@ -19,7 +19,7 @@ results = continuation(myode,  # the ODE to use
     
     '''
 class Continuation:
-    def __init__(self, solver=scipy.optimize.root):
+    def __init__(self, solver=scipy.optimize.root, max_iter=1000):
         '''
         Continuation class to solve ODEs and algebraic equations for finding roots in a parameter space
 
@@ -43,6 +43,7 @@ class Continuation:
         
         '''
         self.solver = solver
+        self.solver_options = {'maxiter': max_iter}
 
     # natural continuation will find the roots of the equation, then increment c and find the roots again
     def nat_continuation(self, ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discret=None):
@@ -80,6 +81,13 @@ class Continuation:
 
         T = 1
 
+        # create step array - len = parameter length
+        if not isinstance(vary_p, list):
+            step = step
+        else:
+            step = np.zeros(len(p0))
+            step[vary_p] = step
+
         # if no discretisation is given, use the linear discretisation
         if discret is None:
             discret = Discretisation().linear
@@ -93,9 +101,12 @@ class Continuation:
         # discretise the ode - creating the function that will be solved F(x) = 0 with the parameter
         fun = discret(ode, x0, (p0,))
 
-        sol = self.solver(fun, x0, args=p0)
-        if sol.success == False:
-            raise ValueError('solver failed to find a solution')
+        sol = self.solver(fun, x0, args=p0, options=self.solver_options)
+        try:
+            if sol.success == False:
+                raise ValueError('solver failed to find a solution')
+        except:
+            pass
 
         # append the solution and the parameter value to the solution
         try:
@@ -114,12 +125,16 @@ class Continuation:
 
             fun = discret(ode, x0, p0)
 
-            try:
-                p0[vary_p] += step
-            except:
-                p0+=step
+            # increment the parameter
+            p0 += step
 
-            sol = self.solver(fun, x0, args=p0)
+            sol = self.solver(fun, x0, args=p0, options=self.solver_options)
+            try:
+                if sol.success == False:
+                    raise ValueError('solver failed to find a solution')
+            except:
+                pass
+            
             try:
                 X.append(sol.x)
             except:
@@ -228,7 +243,8 @@ class Continuation:
             return row
         
         # solve the function
-        sol = self.solver(fun, pred_u)
+        sol = self.solver(fun, pred_u , options=self.solver_options)
+        
 
         # append the solution and the parameter value to the solution
         try:
@@ -254,7 +270,7 @@ class Continuation:
             pred_u = X[-1] + delta_u
             
             # solve the function
-            sol = self.solver(fun, pred_u)
+            sol = self.solver(fun, pred_u , options=self.solver_options)
 
             # append the solution and the parameter value to the solution
             try:
@@ -285,8 +301,7 @@ if __name__ == '__main__':
     def linear(x, x0, T, args):
         return x 
 
-
-    cont = Continuation()
+    cont = Continuation(max_iter=10)
     discret = Discretisation()
 
 
@@ -332,7 +347,7 @@ if __name__ == '__main__':
     plt.show()
 
     # natural continuation with shooting discretisation
-    X, C = cont.ps_arc_continuation(hopf, x0, p0, vary_p = 0, step = 0.1, max_steps = 20, discret=Discretisation().shooting_setup)
+    X, C = cont.ps_arc_continuation(hopf, x0, p0, vary_p = 0, step = 0.1, max_steps = 60, discret=Discretisation().shooting_setup)
 
     # extract the period (the second last element of the solution)
     T = [x[-2] for x in X] 
