@@ -82,6 +82,24 @@ class Discretisation():
 
         return fun
     
+    def arc_shooting(self, f, u, *args ):
+        '''
+        Implementing a numerical shooting method to solve an ODE to find a periodic solution using arc length continuation
+
+        parameters:
+        ----------------------------
+        f - function: the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
+        u - array: the initial conditions and period guess: u = [x0, y0, ... , T, p]
+        args - array: the arguments for the function f
+
+        returns:
+        ----------------------------
+        sol - array: the initial conditions that cause the solution to be periodic: sol = [x0, y0, ... , T, p]
+        '''
+
+        raise NotImplementedError('Arc length shooting method not implemented yet')
+      
+    
     def linear(self, f, x, *args):
         '''
         Linear discretisation of the ODE (x => x)
