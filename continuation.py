@@ -114,7 +114,7 @@ class Continuation:
         num_steps = 0
         # loop with incrementing c until reaching the limit
         while num_steps < max_steps:
-            print(x0)
+
             fun = discret(ode, x0, p0)
 
             try:
@@ -170,24 +170,30 @@ class Continuation:
         X = []
         C = []
 
+        # create step array - len = parameter length
+        if not isinstance(vary_p, list):
+            step = 0.1
+        else:
+            step = np.zeros(len(p0))
+            step[vary_p] = 0.1
+
         if discret is None:
             discret = Discretisation().linear
 
         # find one solution using natural continuation
         x,c = self.nat_continuation(ode, x0, p0, max_steps = 2, discret = discret)
+        # x = np.append(x, step)
         X.append(x[-1])
         C.append(c[-1])
 
         print('first solution found:' + str(X[-1]))
         
         # add step to the parameter
-        try:
-            p0[vary_p] += step
-        except:
-            p0 += step
+        p0 += step
 
         # find a second solution using natural continuation
         x,c = self.nat_continuation(ode, x0, p0, max_steps = 2, discret= discret)
+        # x = np.append(x, step)
         X.append(x[-1])
         C.append(c[-1])
 
@@ -195,17 +201,41 @@ class Continuation:
 
         # find the change in the solution
         delta_u = X[-1] - X[-2]
+        delta_u = np.append(delta_u, step) # add the change in the parameter
 
         # predict the next solution
-        pred_u = X[-1] + delta_u
+        pred_u = X[-1] 
+
+        # add step to the parameter
+        p0 += step
+
+        pred_u = np.append(pred_u,p0)
         
-        # correct the solution
         # define the function to be solved
-        def fun(u, args):
-            return u - pred_u - step**2 * (ode(u, args) - ode(X[-2], args))
+        def fun(u):
+            print('in fun', u)
+            # unpack the initial conditions and period guess
+            p0 = u[-1]
+            T = u[-2]
+            y0 = u[:-2] 
+
+            Y , _ = solve_to(ode, y0, 0, T, 0.01, 'RK4', args=p0)
+
+            # limit cycle condition (last point - initial point = 0)
+            row = Y[-1,:] - y0[:]
+    
+            # phase condition
+            row = np.append(row, ode(0, Y[0,:], p0)[0]) # dx/dt(0) = 0 
+
+            # arc length condition difference between u1 and u2 dot the difference between the predicted and actual solution
+            cond = np.dot(u - pred_u, delta_u)
+
+            row = np.append(row, cond)
+
+            return row
         
         # solve the function
-        sol = self.solver(fun, pred_u, args=p0)
+        sol = self.solver(fun, pred_u)
 
         # append the solution and the parameter value to the solution
         try:
@@ -222,18 +252,16 @@ class Continuation:
         # loop with incrementing c until reaching the limit
         while num_steps < max_steps:
             # find the change in the solution
-            delta_u = X[-1] - X[-2]
+            try:
+                delta_u = X[-1] - np.append(X[-2], step)
+            except:
+                delta_u = X[-1] - X[-2]
 
             # predict the next solution
             pred_u = X[-1] + delta_u
             
-            # correct the solution
-            # define the function to be solved
-            def fun(u, args):
-                return u - pred_u - step**2 * (ode(u, args) - ode(X[-2], args))
-            
             # solve the function
-            sol = self.solver(fun, pred_u, args=p0)
+            sol = self.solver(fun, pred_u)
 
             # append the solution and the parameter value to the solution
             try:
@@ -272,28 +300,17 @@ if __name__ == '__main__':
     cont = Continuation()
     discret = Discretisation()
 
-    # natural continuation with no discretisation
-    X, C = cont.nat_continuation(cubic, x0, -2, vary_p = 0, step = 0.1, max_steps = 40, discret=None)
-
-    # print('X = ', X)
-    # print('C = ', C)
-
-    # plot the solution
-    plt.figure()
-    plt.title('Cubic Equation')
-    plt.plot(C, X)
-    plt.xlabel('parameter c value')
-    plt.ylabel('root value')
-    plt.grid()
-    plt.show()
 
     # now test natural continuation with a differential equation - Hopf bifurcation
     def hopf(t, X, *args):
 
+        # print(X)
         try:
             b = args[0][0]
         except:
             b = args[0]
+
+        # print('b = ' + str(b) + ' x = ' + str(X))
 
         x = X[0]
         y = X[1]
@@ -303,17 +320,6 @@ if __name__ == '__main__':
 
         return np.array([dxdt, dydt])
 
-    def hopf_polar(t, X, *args):
-
-        myu, omega = args[0]
-
-        r = X[0]
-        theta = X[1]
-
-        drdt = r*(myu - r**2)
-        dthetadt = omega
-
-        return np.array([drdt, dthetadt])
 
     # define new ode
     a = 1
@@ -337,14 +343,28 @@ if __name__ == '__main__':
 
     print('\nSecond example: pseudo arc length continuation with shooting discretisation')
 
-    # natural continuation with shooting discretisation
-    X, C = cont.nat_continuation(hopf, x0, p0, vary_p = 0, step = 0.1, max_steps = 20, discret=Discretisation().shooting_setup)
+
+    # natural continuation with no discretisation
+    X, C = cont.nat_continuation(hopf, x0, 0, vary_p = 0, step = 0.1, max_steps = 20, discret=discret.shooting_setup)
 
     # extract the period (the last element of the solution)
     T = [x[-1] for x in X] 
+
+    # plot the solution
+    plt.figure()
+    plt.title('Hopf Equation - natural continuation')
+    plt.plot(C, T)
+    plt.xlabel('parameter c value')
+    plt.ylabel('root value')
+    plt.grid()
+    plt.show()
+
+    # natural continuation with shooting discretisation
+    X, C = cont.ps_arc_continuation(hopf, x0, p0, vary_p = 0, step = 0.1, max_steps = 20, discret=Discretisation().shooting_setup)
+
+    # extract the period (the last element of the solution)
+    T = [x[-2] for x in X] 
     # print('\nT = ', T)
-
-
     # plot the period
     plt.figure()
     plt.title('Hopf Bifurcation')
