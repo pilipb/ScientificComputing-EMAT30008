@@ -93,9 +93,6 @@ class Continuation:
         # discretise the ode - creating the function that will be solved F(x) = 0 with the parameter
         fun = discret(ode, x0, (p0,))
 
-        # solve the discretised equation
-        print('\nin nat continuation', x0)
-
         sol = self.solver(fun, x0, args=p0)
         if sol.success == False:
             raise ValueError('solver failed to find a solution')
@@ -172,10 +169,10 @@ class Continuation:
 
         # create step array - len = parameter length
         if not isinstance(vary_p, list):
-            step = 0.1
+            step = step
         else:
             step = np.zeros(len(p0))
-            step[vary_p] = 0.1
+            step[vary_p] = step
 
         if discret is None:
             discret = Discretisation().linear
@@ -185,8 +182,6 @@ class Continuation:
         # x = np.append(x, step)
         X.append(x[-1])
         C.append(c[-1])
-
-        print('first solution found:' + str(X[-1]))
         
         # add step to the parameter
         p0 += step
@@ -196,8 +191,6 @@ class Continuation:
         # x = np.append(x, step)
         X.append(x[-1])
         C.append(c[-1])
-
-        print('second solution found:' + str(X[-1]))
 
         # find the change in the solution
         delta_u = X[-1] - X[-2]
@@ -213,7 +206,7 @@ class Continuation:
         
         # define the function to be solved
         def fun(u):
-            print('in fun', u)
+
             # unpack the initial conditions and period guess
             p0 = u[-1]
             T = u[-2]
@@ -248,7 +241,7 @@ class Continuation:
         except:
             C.append(p0)
 
-        num_steps = 0
+        num_steps = 1
         # loop with incrementing c until reaching the limit
         while num_steps < max_steps:
             # find the change in the solution
@@ -288,14 +281,10 @@ if __name__ == '__main__':
         c = args
         return x**3 - x + c
 
-    # define the initial conditions
-    x0 = 1
-
     # define the linear discretisation
     def linear(x, x0, T, args):
         return x 
 
-    print('\nFirst example: cubic equation with linear discretisation')
 
     cont = Continuation()
     discret = Discretisation()
@@ -321,28 +310,11 @@ if __name__ == '__main__':
         return np.array([dxdt, dydt])
 
 
-    # define new ode
-    a = 1
-    d = 0.1
-    b = 1.0
-
-    def ode(t, Y, args):
-
-        a, b, d = args
-        x,y = Y
-        dxdt = x*(1-x) - (a*x*y)/(d+x)
-        dydt = b*y*(1- (y/x))
-
-        return np.array([dxdt, dydt])
-
     # define the initial conditions
     x0 = [0.1,0.1]
 
     # define parameter
     p0 = 0
-
-    print('\nSecond example: pseudo arc length continuation with shooting discretisation')
-
 
     # natural continuation with no discretisation
     X, C = cont.nat_continuation(hopf, x0, 0, vary_p = 0, step = 0.1, max_steps = 20, discret=discret.shooting_setup)
@@ -352,9 +324,9 @@ if __name__ == '__main__':
 
     # plot the solution
     plt.figure()
-    plt.title('Hopf Equation - natural continuation')
+    plt.title('Hopf - natural continuation')
     plt.plot(C, T)
-    plt.xlabel('parameter c value')
+    plt.xlabel('parameter b value')
     plt.ylabel('root value')
     plt.grid()
     plt.show()
@@ -362,14 +334,14 @@ if __name__ == '__main__':
     # natural continuation with shooting discretisation
     X, C = cont.ps_arc_continuation(hopf, x0, p0, vary_p = 0, step = 0.1, max_steps = 20, discret=Discretisation().shooting_setup)
 
-    # extract the period (the last element of the solution)
+    # extract the period (the second last element of the solution)
     T = [x[-2] for x in X] 
-    # print('\nT = ', T)
-    # plot the period
+
+    # plot the solution
     plt.figure()
-    plt.title('Hopf Bifurcation')
+    plt.title('Hopf - pseduo arc length continuation')
     plt.plot(C, T)
-    plt.xlabel('parameter myu value')
+    plt.xlabel('parameter b value')
     plt.ylabel('period value')
     plt.grid()
     plt.show()
