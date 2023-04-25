@@ -82,7 +82,7 @@ class Discretisation():
 
         return fun
     
-    def linear(self, t, f, x, *args):
+    def linear(self, f, x, *args):
         '''
         Linear discretisation of the ODE (x => x)
 
@@ -96,7 +96,7 @@ class Discretisation():
         f - function: the function to be solved (with inputs (x, args))
         
         '''
-        return f(t, x, args)
+        return f
 
 
 def shooting_solve(fun, u0, *args):

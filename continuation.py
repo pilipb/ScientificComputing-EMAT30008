@@ -257,10 +257,10 @@ if __name__ == '__main__':
         return np.array([dxdt, dydt])
 
     # define the initial conditions
-    x0 = [0.1, 0.1, 10]
+    x0 = [0.1, 0.1, 5]
 
     # define parameter
-    p = -1
+    p = 0
 
     print('\nSecond example: Hopf Bifurcation with shooting discretisation')
 

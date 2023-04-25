@@ -9,7 +9,11 @@ def ode3(t, Y, *args):
 # hopf bifurcation for shooting method
 def hopf(t, X, *args):
 
-    b = args[0]
+    try:
+        b = args[0][0]
+    except: 
+        b = args[0]
+        
 
     x = X[0]
     y = X[1]
