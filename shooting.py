@@ -76,7 +76,7 @@ class Discretisation():
             row = Y[-1,:] - y0[:]
     
             # phase condition
-            row = np.append(row, f(0, Y[0,:], args)[1]) # dx/dt(0) = 0 
+            row = np.append(row, f(0, Y[0,:], args)[0]) # dx/dt(0) = 0 
 
             return row
 
@@ -98,6 +98,7 @@ class Discretisation():
         '''
 
         raise NotImplementedError('Arc length shooting method not implemented yet')
+    
       
     
     def linear(self, f, x, *args):
@@ -158,7 +159,7 @@ if __name__ == '__main__':
     # define new ode
     a = 1
     d = 0.1
-    b = 2.0
+    b = 0
 
     def ode(t, Y, args):
 
@@ -184,7 +185,7 @@ if __name__ == '__main__':
 
 
     # initial guess
-    Y0 = [0.1,0.1, 5]
+    Y0 = [0.1,0.1, 10]
     
     discret = Discretisation()
     # solve the ode using the shooting method

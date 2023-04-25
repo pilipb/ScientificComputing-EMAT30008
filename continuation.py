@@ -78,35 +78,27 @@ class Continuation:
         X = []
         C = []
 
-        # discretise the ode
-        '''
-        if the function is an algebraic equation, then the discretisation is just the function itself
-        if the function is a differential equation, then the discretisation is calling shooting method
-        to make the F(x) = 0 that will be solved by the solver
-        
-        '''
-
-        param = p0
-        T = 0
+        T = 1
 
         # if no discretisation is given, use the linear discretisation
         if discret is None:
             discret = Discretisation().linear
+        else:
+            x0 = np.append(x0, T)
 
         # check that the discretisation is a function
         if not callable(discret):
             raise TypeError('discretation must be a function or None')
 
         # discretise the ode - creating the function that will be solved F(x) = 0 with the parameter
-        fun = discret(ode, x0, param)
-
-        if discret == Discretisation().shooting_setup:
-            u0 = np.append(x0, T)
-        else:
-            u0 = x0
+        fun = discret(ode, x0, (p0,))
 
         # solve the discretised equation
-        sol = self.solver(fun, u0, args=param)
+        print('\nin nat continuation', x0)
+
+        sol = self.solver(fun, x0, args=p0)
+        if sol.success == False:
+            raise ValueError('solver failed to find a solution')
 
         # append the solution and the parameter value to the solution
         try:
@@ -115,30 +107,31 @@ class Continuation:
             X.append(sol)
 
         try:
-            C.append(param[vary_p])
+            C.append(p0[vary_p])
         except:
-            C.append(param)
+            C.append(p0)
 
         num_steps = 0
         # loop with incrementing c until reaching the limit
         while num_steps < max_steps:
-            fun = discret(ode, x0, param)
+            print(x0)
+            fun = discret(ode, x0, p0)
 
             try:
-                param[vary_p] += step
+                p0[vary_p] += step
             except:
-                param+=step
+                p0+=step
 
-            sol = self.solver(fun, u0, args=param)
+            sol = self.solver(fun, x0, args=p0)
             try:
                 X.append(sol.x)
             except:
                 X.append(sol)
 
             try:
-                C.append(param[vary_p])
+                C.append(p0[vary_p])
             except:
-                C.append(param)
+                C.append(p0)
 
             num_steps += 1
 
@@ -172,28 +165,47 @@ class Continuation:
                 the parameter values that were used to solve the equation
 
         
-        '''
+        ''' 
         # initialize the solution
         X = []
         C = []
 
-        # discretise the ode
-        '''
-        if the function is an algebraic equation, then the discretisation is just the function itself
-        if the function is a differential equation, then the discretisation is calling shooting method
-        to make the F(x) = 0 that will be solved by the solver
-        
-        '''
-        # if no discretisation is given, use the linear discretisation
         if discret is None:
             discret = Discretisation().linear
 
+        # find one solution using natural continuation
+        x,c = self.nat_continuation(ode, x0, p0, max_steps = 2, discret = discret)
+        X.append(x[-1])
+        C.append(c[-1])
 
-        fun = discret(ode, x0, p0)
+        print('first solution found:' + str(X[-1]))
+        
+        # add step to the parameter
+        try:
+            p0[vary_p] += step
+        except:
+            p0 += step
 
-        # find the initial solution
-        sol = self.solver(fun, x0, args=p0)
+        # find a second solution using natural continuation
+        x,c = self.nat_continuation(ode, x0, p0, max_steps = 2, discret= discret)
+        X.append(x[-1])
+        C.append(c[-1])
 
+        print('second solution found:' + str(X[-1]))
+
+        # find the change in the solution
+        delta_u = X[-1] - X[-2]
+
+        # predict the next solution
+        pred_u = X[-1] + delta_u
+        
+        # correct the solution
+        # define the function to be solved
+        def fun(u, args):
+            return u - pred_u - step**2 * (ode(u, args) - ode(X[-2], args))
+        
+        # solve the function
+        sol = self.solver(fun, pred_u, args=p0)
 
         # append the solution and the parameter value to the solution
         try:
@@ -206,44 +218,24 @@ class Continuation:
         except:
             C.append(p0)
 
-        # find a second solution
-        try:
-            p0[vary_p] += step
-        except:
-            p0+=step
-
-        fun = discret(ode, x0, p0)
-
-        sol = self.solver(fun, x0, args=p0)
-
-        try:
-            X.append(sol.x)
-        except:
-            X.append(sol)
-    
-        try:
-            C.append(p0[vary_p])
-        except:
-            C.append(p0)
-
         num_steps = 0
-        # follow the pseudo arclength continuation method
+        # loop with incrementing c until reaching the limit
         while num_steps < max_steps:
+            # find the change in the solution
+            delta_u = X[-1] - X[-2]
+
+            # predict the next solution
+            pred_u = X[-1] + delta_u
             
-            # find the next predicted solution
-            u0 = X[-1] + (X[-1] - X[-2])
+            # correct the solution
+            # define the function to be solved
+            def fun(u, args):
+                return u - pred_u - step**2 * (ode(u, args) - ode(X[-2], args))
+            
+            # solve the function
+            sol = self.solver(fun, pred_u, args=p0)
 
-            # find the next parameter value
-            try:
-                p0[vary_p] += step
-            except:
-                p0+=step
-
-            # discretise the ode
-            fun = discret(ode, u0, p0)
-
-            # solve the system
-            sol = self.solver(fun, u0, args=p0)
+            # append the solution and the parameter value to the solution
             try:
                 X.append(sol.x)
             except:
@@ -298,7 +290,10 @@ if __name__ == '__main__':
     # now test natural continuation with a differential equation - Hopf bifurcation
     def hopf(t, X, *args):
 
-        b = args[0][0]
+        try:
+            b = args[0][0]
+        except:
+            b = args[0]
 
         x = X[0]
         y = X[1]
@@ -335,19 +330,15 @@ if __name__ == '__main__':
         return np.array([dxdt, dydt])
 
     # define the initial conditions
-    x0 = 1
+    x0 = [0.1,0.1]
 
     # define parameter
-    p = -2
+    p0 = 0
 
-    print('\nSecond example: Hopf Bifurcation with shooting discretisation')
+    print('\nSecond example: pseudo arc length continuation with shooting discretisation')
 
     # natural continuation with shooting discretisation
-    X, C = cont.ps_arc_continuation(cubic, x0, p, vary_p = 0, step = 0.1, max_steps = 40, discret=None)
-
-    # split the X into x, y and period at each parameter value
-    # print('\nX = ', X)
-    # print('\nC = ', C)
+    X, C = cont.nat_continuation(hopf, x0, p0, vary_p = 0, step = 0.1, max_steps = 20, discret=Discretisation().shooting_setup)
 
     # extract the period (the last element of the solution)
     T = [x[-1] for x in X] 
