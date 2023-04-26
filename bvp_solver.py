@@ -112,6 +112,8 @@ class Solver():
             u = self.numpy_solve()
         elif self.method == 'tdma':
             u = self.tdma_solve()
+        else:
+            raise ValueError('method not recognised')
 
 
         return u
