@@ -18,8 +18,8 @@ def hopf(t, X, *args):
     x = X[0]
     y = X[1]
 
-    dxdt = b*x - y + x*(x**2 + y**2) - x*(x**2 + y**2)**2
-    dydt = x + b*y + y*(x**2 + y**2) - y*(x**2 + y**2)**2
+    dxdt = b*x - y - x*(x**2 + y**2) 
+    dydt = x + b*y - y*(x**2 + y**2)
 
     return np.array([dxdt, dydt])
 
