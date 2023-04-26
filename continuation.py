@@ -19,7 +19,7 @@ results = continuation(myode,  # the ODE to use
     
     '''
 class Continuation:
-    def __init__(self, solver=scipy.optimize.root, max_iter=1000):
+    def __init__(self, solver=scipy.optimize.root):
         '''
         Continuation class to solve ODEs and algebraic equations for finding roots in a parameter space
 
@@ -43,7 +43,7 @@ class Continuation:
         
         '''
         self.solver = solver
-        self.solver_options = {'maxiter': max_iter}
+
 
     # natural continuation will find the roots of the equation, then increment c and find the roots again
     def nat_continuation(self, ode, x0, p0 , vary_p =0, step = 0.1, max_steps = 100, discret=None):
@@ -101,7 +101,7 @@ class Continuation:
         # discretise the ode - creating the function that will be solved F(x) = 0 with the parameter
         fun = discret(ode, x0, (p0,))
 
-        sol = self.solver(fun, x0, args=p0, options=self.solver_options)
+        sol = self.solver(fun, x0, args=p0)
         try:
             if sol.success == False:
                 raise ValueError('solver failed to find a solution')
@@ -128,7 +128,7 @@ class Continuation:
             # increment the parameter
             p0 += step
 
-            sol = self.solver(fun, x0, args=p0, options=self.solver_options)
+            sol = self.solver(fun, x0, args=p0)
             try:
                 if sol.success == False:
                     raise ValueError('solver failed to find a solution')
@@ -243,7 +243,7 @@ class Continuation:
             return row
         
         # solve the function
-        sol = self.solver(fun, pred_u , options=self.solver_options)
+        sol = self.solver(fun, pred_u)
         
 
         # append the solution and the parameter value to the solution
@@ -270,7 +270,7 @@ class Continuation:
             pred_u = X[-1] + delta_u
             
             # solve the function
-            sol = self.solver(fun, pred_u , options=self.solver_options)
+            sol = self.solver(fun, pred_u)
 
             # append the solution and the parameter value to the solution
             try:
@@ -301,7 +301,7 @@ if __name__ == '__main__':
     def linear(x, x0, T, args):
         return x 
 
-    cont = Continuation(max_iter=10)
+    cont = Continuation()
     discret = Discretisation()
 
 
