@@ -42,7 +42,8 @@ class Discretisation():
 
         parameters:
         ----------------------------
-        f - function: the function to be integrated (with inputs (Y,t)) in first order form of n dimensions
+        f - function: the function to be integrated (with inputs (t, Y, *args)) in first order form of n dimensions
+        u - array: the initial guess for the solution [x0, y0, ... , T]
         args - array: the arguments for the function f
 
         returns:
