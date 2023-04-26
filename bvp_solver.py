@@ -198,7 +198,8 @@ class Solver():
             The solution to the ODE
         
         '''
-        from helpers import tdma
+        from bvp_solver import tdma
+
         # check if q is a constant
         if callable(self.ODE.q):
             raise ValueError('q is not a constant, use scipy method instead')
@@ -210,11 +211,53 @@ class Solver():
         u = np.concatenate(([self.ODE.alpha], u, [self.ODE.beta]))
 
         return u
+
+
+def tdma(A, b):
+    '''
+    Thomas algorithm or Tridiagonal matrix algorithm (TDMA) for solving
+    A.x = b
+    where A is a tridiagonal matrix
+
     
+    Parameters:
+    -----------------
+    A: array
+        the A matrix
+    b: array
+        the b vector
 
+    Returns:
+    -----------------
+    x: array
+        the solution of the linear system
 
+    '''
+    # define the size of the matrix
+    N = len(b)
+    c = np.zeros(N)
+    d = np.zeros(N)
+    x = np.zeros(N)
 
+    # solve the linear system
+    c[0] = A[0, 1]/A[0, 0]
+    d[0] = b[0]/A[0, 0]
 
+    # loop over the matrix
+    for i in range(1, N-1):
+        # solve the linear system
+        c[i] = A[i, i+1]/(A[i, i] - A[i, i-1]*c[i-1])
+        d[i] = (b[i] - A[i, i-1]*d[i-1])/(A[i, i] - A[i, i-1]*c[i-1])
+
+    # solve the last linear system
+    d[-1] = (b[-1] - A[-1, -2]*d[-2])/(A[-1, -1] - A[-1, -2]*c[-2])
+
+    # solve the linear system backwards
+    x[-1] = d[-1]
+    for i in range(N-2, -1, -1):
+        x[i] = d[i] - c[i]*x[i+1]
+
+    return x
 
     
 ##### test functions #####
@@ -227,8 +270,9 @@ if __name__ == '__main__':
     k = 1
 
    
-    def q(x, u, *args):
-        return 1
+    # def q(x, u, *args):
+    #     return 1
+    q = 1
     
     bound_type = 'DD'
     alpha = 0
@@ -242,7 +286,7 @@ if __name__ == '__main__':
 
     # create the solver object
     N = 10
-    method = 'scipy'
+    method = 'tdma'
     solver = Solver(ODE, N, method)
 
     # solve the ODE

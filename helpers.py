@@ -66,52 +66,6 @@ def boundary(alpha, beta, N, dx, type, sparse=False):
     return A, b
 
 
-def tdma(A, b):
-    '''
-    Thomas algorithm or Tridiagonal matrix algorithm (TDMA) for solving
-    A.x = b
-    where A is a tridiagonal matrix
-
-    
-    Parameters:
-    -----------------
-    A: array
-        the A matrix
-    b: array
-        the b vector
-
-    Returns:
-    -----------------
-    x: array
-        the solution of the linear system
-
-    '''
-    # define the size of the matrix
-    N = len(b)
-    c = np.zeros(N)
-    d = np.zeros(N)
-    x = np.zeros(N)
-
-    # solve the linear system
-    c[0] = A[0, 1]/A[0, 0]
-    d[0] = b[0]/A[0, 0]
-
-    # loop over the matrix
-    for i in range(1, N-1):
-        # solve the linear system
-        c[i] = A[i, i+1]/(A[i, i] - A[i, i-1]*c[i-1])
-        d[i] = (b[i] - A[i, i-1]*d[i-1])/(A[i, i] - A[i, i-1]*c[i-1])
-
-    # solve the last linear system
-    d[-1] = (b[-1] - A[-1, -2]*d[-2])/(A[-1, -1] - A[-1, -2]*c[-2])
-
-    # solve the linear system backwards
-    x[-1] = d[-1]
-    for i in range(N-2, -1, -1):
-        x[i] = d[i] - c[i]*x[i+1]
-
-    return x
-
 def plot_help(plt, xlabel, ylabel, title=None, legend=False):
     '''
     This function is a helper function for plotting
