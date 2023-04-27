@@ -220,7 +220,7 @@ class Continuation:
         pred_u = X[-1] #+ delta_u
         pred_u = np.append(pred_u,p0)
 
-        # define the function to be solved
+        # define the function to be solved (this will be F(x) = 0) > will be located in discretisation in future
         def fun(u):
 
             # unpack the initial conditions and period guess
