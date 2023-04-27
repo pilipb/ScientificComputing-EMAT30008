@@ -262,14 +262,11 @@ class Continuation:
         # loop with incrementing c until reaching the limit
         while num_steps < max_steps:
 
-            # add step to the parameter
-            p0 += step
-
             # calculate the delta u - accounting for the first where there is no parameter 
             try:
                 delta = X[-1] - X[-2]
             except:
-                delta = X[-1] - np.append(X[-2], p0)
+                delta = X[-1] - np.append(X[-2], p0 - step)
 
             # predict the next solution as the same x values but with the new parameter at first and then just change the parameter
             X_ = X[-1] + delta
@@ -288,6 +285,9 @@ class Continuation:
                 C.append(p0[vary_p])
             except:
                 C.append(p0)
+
+            # add step to the parameter
+            p0 += step
 
             num_steps += 1
 
