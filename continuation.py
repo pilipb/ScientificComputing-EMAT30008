@@ -75,6 +75,7 @@ class Continuation:
 
         
         '''
+        step_size = step
         # initialize the solution
         X = []
         C = []
@@ -82,11 +83,11 @@ class Continuation:
         T = 1
 
         # create step array - len = parameter length
-        if not isinstance(vary_p, list):
-            step = step
+        if not isinstance(p0, list):
+            step = step_size
         else:
             step = np.zeros(len(p0))
-            step[vary_p] = step
+            step[vary_p] = step_size
 
         # if no discretisation is given, use the linear discretisation
         if discret is None:
@@ -178,16 +179,17 @@ class Continuation:
 
         
         ''' 
+        step_size = step
         # initialize the solution
         X = []
         C = []
 
         # create step array - len = parameter length
-        if not isinstance(vary_p, list):
-            step = step
+        if not isinstance(p0, list):
+            step = step_size
         else:
             step = np.zeros(len(p0))
-            step[vary_p] = step
+            step[vary_p] = step_size
 
         if discret is None:
             discret = Discretisation().linear
@@ -323,19 +325,35 @@ if __name__ == '__main__':
         dydt = x + b*y - y*(x**2 + y**2)
 
         return np.array([dxdt, dydt])
+    
+
+    def polar(t, X, args):
+            
+        try:
+            b= args[0]
+        except:
+            b = args
+
+        r = X[0]
+        theta = X[1]
+
+        drdt = b*r + r**3 - r**5
+        dthetadt = 1
+
+        return np.array([drdt, dthetadt])
 
 
     # define the initial conditions
-    x0 = [0.1,0.1]
+    x0 = [1, 1]
 
     # define parameter
-    p0 = 0
+    p0 = 2
 
     # natural continuation with no discretisation
-    X, C = cont.nat_continuation(hopf, x0, 0, vary_p = 0, step = 0.1, max_steps = 20, discret=discret.shooting_setup)
+    X, C = cont.nat_continuation(polar, x0, p0, vary_p = 0, step = -0.05, max_steps = 60, discret=discret.shooting_setup)
 
-    # extract the period (the last element of the solution)
-    T = [x[-1] for x in X] 
+    # extract the r value (the first element of the solution)
+    T = [x[0] for x in X] 
 
     # plot the solution
     plt.figure()
@@ -346,16 +364,18 @@ if __name__ == '__main__':
     plt.grid()
     plt.show()
 
-    # natural continuation with shooting discretisation
-    X, C = cont.ps_arc_continuation(hopf, x0, p0, vary_p = 0, step = 0.1, max_steps = 60, discret=Discretisation().shooting_setup)
+    p0 = 2
 
-    # extract the period (the second last element of the solution)
-    T = [x[-2] for x in X] 
+    # natural continuation with shooting discretisation
+    X, C = cont.ps_arc_continuation(polar, x0, p0, vary_p = 0, step = -0.05, max_steps = 60, discret=discret.shooting_setup)
+
+    # extract the r value (the first element of the solution)
+    T = [x[0] for x in X] 
 
     # plot the solution
     plt.figure()
     plt.title('Hopf - pseduo arc length continuation')
-    plt.plot(C, T)
+    plt.plot(C, X)
     plt.xlabel('parameter b value')
     plt.ylabel('period value')
     plt.grid()
