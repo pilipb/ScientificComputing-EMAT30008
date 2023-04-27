@@ -211,15 +211,20 @@ class Continuation:
 
         # find the change in the solution
         delta_u = X[-1] - X[-2]
-        delta_u = np.append(delta_u, step) # add the change in the parameter
+
 
         # predict the next solution
-        pred_u = X[-1] 
+        pred_u = X[-1] + delta_u
+
 
         # add step to the parameter
         p0 += step
 
-        pred_u = np.append(pred_u,p0)
+        delta = np.append(delta_u, step) # add the change in the parameter
+
+
+        pred = np.append(pred_u,p0)
+
         
         # define the function to be solved
         def fun(u):
@@ -238,14 +243,14 @@ class Continuation:
             row = np.append(row, ode(0, Y[0,:], p0)[0]) # dx/dt(0) = 0 
 
             # arc length condition difference between u1 and u2 dot the difference between the predicted and actual solution
-            cond = np.dot(u - pred_u, delta_u)
+            cond = np.dot(u - pred, delta)
 
             row = np.append(row, cond)
 
             return row
         
         # solve the function
-        sol = self.solver(fun, pred_u)
+        sol = self.solver(fun, pred)
         
 
         # append the solution and the parameter value to the solution
@@ -264,7 +269,7 @@ class Continuation:
         while num_steps < max_steps:
             # find the change in the solution
             try:
-                delta_u = X[-1] - np.append(X[-2], step)
+                delta_u = X[-1] - np.append(X[-2], step_size)
             except:
                 delta_u = X[-1] - X[-2]
 
@@ -288,7 +293,7 @@ class Continuation:
             num_steps += 1
 
 
-        return X, C
+        return X[2:], C[2:]
 
 
 
@@ -350,7 +355,7 @@ if __name__ == '__main__':
     p0 = 2
 
     # natural continuation with no discretisation
-    X, C = cont.nat_continuation(polar, x0, p0, vary_p = 0, step = -0.05, max_steps = 60, discret=discret.shooting_setup)
+    X, C = cont.nat_continuation(polar, x0, p0, vary_p = 0, step = -0.1, max_steps = 60, discret=discret.shooting_setup)
 
     # extract the r value (the first element of the solution)
     T = [x[0] for x in X] 
@@ -364,11 +369,9 @@ if __name__ == '__main__':
     plt.grid()
     plt.show()
 
-    p0 = 2
-
     # natural continuation with shooting discretisation
-    X, C = cont.ps_arc_continuation(polar, x0, p0, vary_p = 0, step = -0.05, max_steps = 60, discret=discret.shooting_setup)
-
+    X, C = cont.ps_arc_continuation(polar, x0, p0, vary_p = 0, step = -0.1, max_steps = 60, discret=discret.shooting_setup)
+    
     # extract the r value (the first element of the solution)
     T = [x[0] for x in X] 
 
