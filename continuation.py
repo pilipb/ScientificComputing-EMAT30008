@@ -211,21 +211,15 @@ class Continuation:
 
         # find the change in the solution
         delta_u = X[-1] - X[-2]
-
-
-        # predict the next solution
-        pred_u = X[-1] + delta_u
-
+        delta = np.append(delta_u, step) # change in u and change in p
 
         # add step to the parameter
         p0 += step
 
-        delta = np.append(delta_u, step) # add the change in the parameter
+        # predict the next solution as the same x values but with the new parameter
+        pred_u = X[-1] #+ delta_u
+        pred_u = np.append(pred_u,p0)
 
-
-        pred = np.append(pred_u,p0)
-
-        
         # define the function to be solved
         def fun(u):
 
@@ -243,14 +237,14 @@ class Continuation:
             row = np.append(row, ode(0, Y[0,:], p0)[0]) # dx/dt(0) = 0 
 
             # arc length condition difference between u1 and u2 dot the difference between the predicted and actual solution
-            cond = np.dot(u - pred, delta)
+            cond = np.dot(u - pred_u, delta)
 
             row = np.append(row, cond)
 
             return row
         
         # solve the function
-        sol = self.solver(fun, pred)
+        sol = self.solver(fun, pred_u)
         
 
         # append the solution and the parameter value to the solution
@@ -264,19 +258,25 @@ class Continuation:
         except:
             C.append(p0)
 
-        num_steps = 1
+        num_steps = 0
         # loop with incrementing c until reaching the limit
         while num_steps < max_steps:
-            # find the change in the solution
-            try:
-                delta_u = X[-1] - np.append(X[-2], step_size)
-            except:
-                delta_u = X[-1] - X[-2]
 
-            # predict the next solution
-            pred_u = X[-1] + delta_u
+            # add step to the parameter
+            p0 += step
+
+            # calculate the delta u
+            try:
+                delta = X[-1] - X[-2]
+            except:
+                delta = X[-1] - np.append(X[-2], p0)
+
+            # predict the next solution as the same x values but with the new parameter at first and then just change the parameter
+            X_ = X[-1] + delta
+            pred_u = X_
+
             
-            # solve the function
+            # define the function to be solved
             sol = self.solver(fun, pred_u)
 
             # append the solution and the parameter value to the solution
@@ -362,7 +362,7 @@ if __name__ == '__main__':
 
     # plot the solution
     plt.figure()
-    plt.title('Hopf - natural continuation')
+    plt.title('natural continuation')
     plt.plot(C, T)
     plt.xlabel('parameter b value')
     plt.ylabel('root value')
@@ -370,17 +370,17 @@ if __name__ == '__main__':
     plt.show()
 
     # natural continuation with shooting discretisation
-    X, C = cont.ps_arc_continuation(polar, x0, p0, vary_p = 0, step = -0.1, max_steps = 60, discret=discret.shooting_setup)
-    
+    X, C = cont.ps_arc_continuation(polar, x0, p0, vary_p = 0, step = -0.1, max_steps = 40, discret=discret.shooting_setup)
+
     # extract the r value (the first element of the solution)
     T = [x[0] for x in X] 
 
     # plot the solution
     plt.figure()
-    plt.title('Hopf - pseduo arc length continuation')
-    plt.plot(C, X)
+    plt.title('pseudo arc length continuation')
+    plt.plot(C, T)
     plt.xlabel('parameter b value')
-    plt.ylabel('period value')
+    plt.ylabel('root value')
     plt.grid()
     plt.show()
 
