@@ -211,7 +211,7 @@ class Continuation:
 
         # find the change in the solution
         delta_u = X[-1] - X[-2]
-        delta = np.append(delta_u, step) # change in u and change in p
+        delta_u = np.append(delta_u, step) # change in u and change in p
 
         # add step to the parameter
         p0 += step
@@ -237,7 +237,7 @@ class Continuation:
             row = np.append(row, ode(0, Y[0,:], p0)[0]) # dx/dt(0) = 0 
 
             # arc length condition difference between u1 and u2 dot the difference between the predicted and actual solution
-            cond = np.dot(u - pred_u, delta)
+            cond = np.dot(u - pred_u, delta_u)
 
             row = np.append(row, cond)
 
@@ -265,7 +265,7 @@ class Continuation:
             # add step to the parameter
             p0 += step
 
-            # calculate the delta u
+            # calculate the delta u - accounting for the first where there is no parameter 
             try:
                 delta = X[-1] - X[-2]
             except:
@@ -275,7 +275,6 @@ class Continuation:
             X_ = X[-1] + delta
             pred_u = X_
 
-            
             # define the function to be solved
             sol = self.solver(fun, pred_u)
 
