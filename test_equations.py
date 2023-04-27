@@ -73,3 +73,18 @@ def pde_gen(q_lin = False):
     # create the PDE object
     return PDE(f, m, q, bound_type, alpha, beta, a, b, *args)
 
+def polar(t, X, args):
+            
+        try:
+            b= args[0]
+        except:
+            b = args
+
+        r = X[0]
+        theta = X[1]
+
+        drdt = b*r + r**3 - r**5
+        dthetadt = 1
+
+        return np.array([drdt, dthetadt])
+
