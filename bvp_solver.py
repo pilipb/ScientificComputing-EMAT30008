@@ -262,46 +262,6 @@ def tdma(A, b):
     return x
 
     
-##### test functions #####
-
-if __name__ == '__main__':
-
-    # define the ODE
-    m = 1
-    c = 1
-    k = 1
-
-   
-    # def q(x, u, *args):
-    #     return 1
-    q = 1
-    
-    bound_type = 'DD'
-    alpha = 0
-    beta = 0
-    a = 0
-    b = 1
-    args = (3,)
-
-    # create the ODE object
-    ODE = ODE(m, c, k, q, bound_type, alpha, beta, a, b, *args)
-
-    # create the solver object
-    N = 10
-    method = 'tdma'
-    solver = Solver(ODE, N, method)
-
-    # solve the ODE
-    u = solver.solve()
-
-    # extract the grid
-    x = solver.x
-
-    # plot the solution
-    plt.plot(x, u, 'o-')
-    plt.xlabel('x')
-    plt.ylabel('u')
-    plt.show()
 
 
 

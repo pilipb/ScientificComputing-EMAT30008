@@ -444,58 +444,6 @@ def profile(PDE, N, t_final):
 
 
         
-##### TEST #####
-
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-
-    # define the ODE
-    m = 0.01
-
-    # q = lambda x, t, u, *args: np.exp(args[0] * u)
-    q = 0
-    bound_type = 'DD'
-    alpha = 0
-    beta = 0
-    a = 0
-    b = 1
-    args = (3,)
-    f = lambda x: np.sin((np.pi*(x-a)/b-a))
-
-    # create the PDE object
-    pde = PDE(f, m, q, bound_type, alpha, beta, a, b, *args)
-
-    # create the solver object
-    N = 100
-    method = 'crank_nicolson'
-    t_final = 0.01
-    solver = Solver(pde, N, t_final, method, CFL=0.6, sparse=True)
-
-    # solve the ODE
-    u = solver.solve()
-
-    # extract the grid
-    x = solver.x
-
-    # plot the solution at 3 different times
-    for n in np.linspace(0, len(solver.t)-1, 10, dtype = int):
-        plt.plot(x, u[:,n], label = 't = {}'.format(solver.t[n]))
-
-    plt.legend()
-    plt.show()
-
-    # # profile the solvers
-    # stats = profile(pde, 100, 0.01, plot = False)
-
-    # # for each solver, print the top 10 functions
-    # for s in stats:
-    #     s.print_stats(10)
-
-
-    
-
-    
-
 
 
 
