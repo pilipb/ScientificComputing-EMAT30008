@@ -173,7 +173,7 @@ class Continuation:
         Returns:
         ----------------------------
         X - array:
-                the solution of the equation for each parameter value
+                the solution of the equation for each parameter value [x1, x2, ..., T, [p1, p2, ...]]
         C - array:
                 the parameter values that were used to solve the equation
 
